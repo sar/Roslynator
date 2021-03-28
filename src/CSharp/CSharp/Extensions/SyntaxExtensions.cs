@@ -3258,6 +3258,32 @@ namespace Roslynator.CSharp
 
             return directive;
         }
+
+        internal static string ToDebugString(this SyntaxNode node)
+        {
+            FileLinePositionSpan lineSpan = node.SyntaxTree.GetLineSpan(node.Span);
+            LinePosition startSpan = lineSpan.StartLinePosition;
+            LinePosition endSpan = lineSpan.EndLinePosition;
+
+            string text = node.ToString();
+
+            if (text.Length > 500)
+                text = text.Remove(500);
+
+#pragma warning disable RCS0055
+            return node.SyntaxTree.FilePath
+                + Environment.NewLine
+                + node.Kind()
+                + Environment.NewLine
+                + "Start L: " + (startSpan.Line + 1) + " CH: " + (startSpan.Character + 1)
+                + Environment.NewLine
+                + "End L: " + (endSpan.Line + 1) + " CH: " + (endSpan.Character + 1)
+                + Environment.NewLine
+                + "Leading: " + node.GetLeadingTrivia().Count + " Trailing: " + node.GetTrailingTrivia().Count
+                + Environment.NewLine
+                + text;
+#pragma warning restore RCS0055
+        }
         #endregion SyntaxNode
 
         #region SyntaxToken

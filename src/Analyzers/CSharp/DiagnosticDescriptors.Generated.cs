@@ -2453,6 +2453,18 @@ namespace Roslynator.CSharp
             helpLinkUri:        DiagnosticIdentifiers.UseIsNullPatternInsteadOfComparisonOrViceVersa, 
             customTags:         Array.Empty<string>());
 
+        /// <summary>RCS1249</summary>
+        public static readonly DiagnosticDescriptor UseTargetTypedNewExpression = DiagnosticDescriptorFactory.Default.Create(
+            id:                 DiagnosticIdentifiers.UseTargetTypedNewExpression, 
+            title:              "Use target-typed new expression.", 
+            messageFormat:      "Use target-typed new expression.", 
+            category:           DiagnosticCategories.Style, 
+            defaultSeverity:    DiagnosticSeverity.Info, 
+            isEnabledByDefault: false, 
+            description:        null, 
+            helpLinkUri:        DiagnosticIdentifiers.UseTargetTypedNewExpression, 
+            customTags:         WellKnownDiagnosticTags.Unnecessary);
+
         public static partial class ReportOnly
         {
             /// <summary>RCS1014a</summary>

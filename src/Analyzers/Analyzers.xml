@@ -5613,4 +5613,25 @@ void M()
       </Option>
     </Options>
   </Analyzer>
+  <Analyzer Identifier="UseTargetTypedNewExpression">
+    <Id>RCS1249</Id>
+    <Title>Use target-typed new expression.</Title>
+    <Category>Style</Category>
+    <DefaultSeverity>Info</DefaultSeverity>
+    <IsEnabledByDefault>false</IsEnabledByDefault>
+    <SupportsFadeOut>true</SupportsFadeOut>
+    <MinLanguageVersion>9.0</MinLanguageVersion>
+    <Samples>
+      <Sample>
+        <Before><![CDATA[string s = new string(' ', 1)]]></Before>
+        <After><![CDATA[string s = new(' ', 1)]]></After>
+      </Sample>
+    </Samples>
+    <Links>
+      <Link>
+        <Url>https://docs.microsoft.com/en-us/dotnet/csharp/whats-new/csharp-9</Url>
+        <Text>What's new in C# 9.0</Text>
+      </Link>
+    </Links>
+  </Analyzer>
 </Analyzers>
