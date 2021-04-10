@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Roslynator.CSharp
 {
-    public static partial class CompilerDiagnosticDescriptors
+    public static partial class CompilerDiagnosticRules
     {
         /// <summary>CS0019</summary>
         public static readonly DiagnosticDescriptor OperatorCannotBeAppliedToOperands = new DiagnosticDescriptor(
@@ -2019,6 +2019,18 @@ namespace Roslynator.CSharp
             messageFormat:      "Instance fields of readonly structs must be readonly", 
             category:           "Compiler", 
             defaultSeverity:    DiagnosticSeverity.Error, 
+            isEnabledByDefault: true, 
+            description:        null, 
+            helpLinkUri:        "", 
+            customTags:         WellKnownDiagnosticTags.Compiler);
+
+        /// <summary>CS8632</summary>
+        public static readonly DiagnosticDescriptor AnnotationForNullableReferenceTypesShouldOnlyBeUsedWithinNullableAnnotationsContext = new DiagnosticDescriptor(
+            id:                 CompilerDiagnosticIdentifiers.AnnotationForNullableReferenceTypesShouldOnlyBeUsedWithinNullableAnnotationsContext, 
+            title:              "The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.", 
+            messageFormat:      "The annotation for nullable reference types should only be used in code within a '#nullable' annotations context", 
+            category:           "Compiler", 
+            defaultSeverity:    DiagnosticSeverity.Warning, 
             isEnabledByDefault: true, 
             description:        null, 
             helpLinkUri:        "", 

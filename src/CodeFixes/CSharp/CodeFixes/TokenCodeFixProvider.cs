@@ -18,7 +18,7 @@ namespace Roslynator.CSharp.CodeFixes
 {
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(TokenCodeFixProvider))]
     [Shared]
-    public class TokenCodeFixProvider : BaseCodeFixProvider
+    public sealed class TokenCodeFixProvider : BaseCodeFixProvider
     {
         public sealed override ImmutableArray<string> FixableDiagnosticIds
         {
@@ -32,7 +32,8 @@ namespace Roslynator.CSharp.CodeFixes
                     CompilerDiagnosticIdentifiers.TypeExpected,
                     CompilerDiagnosticIdentifiers.SemicolonAfterMethodOrAccessorBlockIsNotValid,
                     CompilerDiagnosticIdentifiers.CannotConvertType,
-                    CompilerDiagnosticIdentifiers.OptionalParametersMustAppearAfterAllRequiredParameters);
+                    CompilerDiagnosticIdentifiers.OptionalParametersMustAppearAfterAllRequiredParameters,
+                    CompilerDiagnosticIdentifiers.AnnotationForNullableReferenceTypesShouldOnlyBeUsedWithinNullableAnnotationsContext);
             }
         }
 
@@ -427,6 +428,27 @@ namespace Roslynator.CSharp.CodeFixes
                                         .WithFormatterAnnotation();
 
                                     return context.Document.ReplaceNodeAsync(parameter, newParameter, cancellationToken);
+                                },
+                                GetEquivalenceKey(diagnostic));
+
+                            context.RegisterCodeFix(codeAction, diagnostic);
+                            break;
+                        }
+                    case CompilerDiagnosticIdentifiers.AnnotationForNullableReferenceTypesShouldOnlyBeUsedWithinNullableAnnotationsContext:
+                        {
+                            if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.RemoveAnnotationForNullableReferenceTypes))
+                                break;
+
+                            if (!token.IsKind(SyntaxKind.QuestionToken))
+                                return;
+
+                            CodeAction codeAction = CodeAction.Create(
+                                "Remove 'nullable' annotation",
+                                ct =>
+                                {
+                                    var textChange = new TextChange(token.Span, "");
+
+                                    return context.Document.WithTextChangeAsync(textChange, ct);
                                 },
                                 GetEquivalenceKey(diagnostic));
 
