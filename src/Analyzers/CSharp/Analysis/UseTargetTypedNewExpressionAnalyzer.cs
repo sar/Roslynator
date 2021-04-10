@@ -11,11 +11,19 @@ using Microsoft.CodeAnalysis.Diagnostics;
 namespace Roslynator.CSharp.Analysis
 {
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
-    public class UseTargetTypedNewExpressionAnalyzer : BaseDiagnosticAnalyzer
+    public sealed class UseTargetTypedNewExpressionAnalyzer : BaseDiagnosticAnalyzer
     {
+        private static ImmutableArray<DiagnosticDescriptor> _supportedDiagnostics;
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
         {
-            get { return ImmutableArray.Create(DiagnosticDescriptors.UseTargetTypedNewExpression); }
+            get
+            {
+                if (_supportedDiagnostics.IsDefault)
+                    Immutable.InterlockedInitialize(ref _supportedDiagnostics, DiagnosticRules.UseTargetTypedNewExpression);
+
+                return _supportedDiagnostics;
+            }
         }
 
         public override void Initialize(AnalysisContext context)
@@ -267,7 +275,7 @@ namespace Roslynator.CSharp.Analysis
 
         private static void ReportDiagnostic(SyntaxNodeAnalysisContext context, ObjectCreationExpressionSyntax objectCreation)
         {
-            DiagnosticHelpers.ReportDiagnostic(context, DiagnosticDescriptors.UseTargetTypedNewExpression, objectCreation.Type);
+            DiagnosticHelpers.ReportDiagnostic(context, DiagnosticRules.UseTargetTypedNewExpression, objectCreation.Type);
         }
     }
 }

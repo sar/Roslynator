@@ -10,7 +10,7 @@ namespace Roslynator.CSharp.Analysis.Tests
 {
     public class RCS1249UseTargetTypedNewExpressionTests : AbstractCSharpDiagnosticVerifier<UseTargetTypedNewExpressionAnalyzer, UseTargetTypedNewExpressionCodeFixProvider>
     {
-        public override DiagnosticDescriptor Descriptor { get; } = DiagnosticDescriptors.UseTargetTypedNewExpression;
+        public override DiagnosticDescriptor Descriptor { get; } = DiagnosticRules.UseTargetTypedNewExpression;
 
         [Fact, Trait(Traits.Analyzer, DiagnosticIdentifiers.UseTargetTypedNewExpression)]
         public async Task Test_LocalDeclaration()
