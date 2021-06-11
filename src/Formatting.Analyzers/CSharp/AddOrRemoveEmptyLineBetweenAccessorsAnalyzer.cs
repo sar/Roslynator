@@ -10,7 +10,7 @@ using Roslynator.CSharp;
 
 namespace Roslynator.Formatting.CSharp
 {
-    //TODO: sloučit s AccessorListAnalyzer
+    //TODO: merge with AccessorListAnalyzer
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class AddOrRemoveEmptyLineBetweenAccessorsAnalyzer : BaseDiagnosticAnalyzer
     {
@@ -25,7 +25,8 @@ namespace Roslynator.Formatting.CSharp
                     Immutable.InterlockedInitialize(
                         ref _supportedDiagnostics,
                         DiagnosticRules.AddEmptyLineBetweenAccessors,
-                        DiagnosticRules.AddEmptyLineBetweenSingleLineAccessorsOrViceVersa);
+                        DiagnosticRules.AddEmptyLineBetweenSingleLineAccessorsOrViceVersa,
+                        CommonDiagnosticRules.AnalyzerIsObsolete);
                 }
 
                 return _supportedDiagnostics;
@@ -82,7 +83,8 @@ namespace Roslynator.Formatting.CSharp
                                 context,
                                 DiagnosticRules.ReportOnly.RemoveEmptyLineBetweenSingleLineAccessors,
                                 Location.Create(context.Node.SyntaxTree, leadingTrivia[0].Span.WithLength(0)),
-                                properties: DiagnosticProperties.AnalyzerOption_Invert);
+                                properties: DiagnosticProperties.AnalyzerOption_Invert,
+                                AnalyzerOptions.RemoveEmptyLineBetweenSingleLineAccessors);
                         }
                     }
                     else if (!AnalyzerOptions.RemoveEmptyLineBetweenSingleLineAccessors.IsEnabled(context))
@@ -90,13 +92,14 @@ namespace Roslynator.Formatting.CSharp
                         DiagnosticHelpers.ReportDiagnostic(
                             context,
                             DiagnosticRules.AddEmptyLineBetweenSingleLineAccessorsOrViceVersa,
-                            Location.Create(context.Node.SyntaxTree, trailingTrivia.Last().Span.WithLength(0)));
+                            Location.Create(context.Node.SyntaxTree, trailingTrivia.Last().Span.WithLength(0)),
+                            AnalyzerOptions.RemoveEmptyLineBetweenSingleLineAccessors);
                     }
                 }
             }
             else if (!isEmptyLine)
             {
-                DiagnosticHelpers.ReportDiagnosticIfNotSuppressed(
+                DiagnosticHelpers.ReportDiagnosticIfEffective(
                     context,
                     DiagnosticRules.AddEmptyLineBetweenAccessors,
                     Location.Create(context.Node.SyntaxTree, trailingTrivia.Last().Span.WithLength(0)));

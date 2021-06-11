@@ -24,7 +24,8 @@ namespace Roslynator.Formatting.CSharp
                     Immutable.InterlockedInitialize(
                         ref _supportedDiagnostics,
                         DiagnosticRules.RemoveEmptyLineBetweenUsingDirectivesWithSameRootNamespace,
-                        DiagnosticRules.AddEmptyLineBetweenUsingDirectivesWithDifferentRootNamespaceOrViceVersa);
+                        DiagnosticRules.AddEmptyLineBetweenUsingDirectivesWithDifferentRootNamespaceOrViceVersa,
+                        CommonDiagnosticRules.AnalyzerIsObsolete);
                 }
 
                 return _supportedDiagnostics;
@@ -101,7 +102,7 @@ namespace Roslynator.Formatting.CSharp
                 {
                     if (isEmptyLine)
                     {
-                        DiagnosticHelpers.ReportDiagnosticIfNotSuppressed(
+                        DiagnosticHelpers.ReportDiagnosticIfEffective(
                             context,
                             DiagnosticRules.RemoveEmptyLineBetweenUsingDirectivesWithSameRootNamespace,
                             Location.Create(context.Node.SyntaxTree, leadingTrivia[0].Span.WithLength(0)));
@@ -117,7 +118,8 @@ namespace Roslynator.Formatting.CSharp
                                 context,
                                 DiagnosticRules.ReportOnly.RemoveEmptyLineBetweenUsingDirectivesWithDifferentRootNamespace,
                                 Location.Create(context.Node.SyntaxTree, leadingTrivia[0].Span.WithLength(0)),
-                                properties: DiagnosticProperties.AnalyzerOption_Invert);
+                                properties: DiagnosticProperties.AnalyzerOption_Invert,
+                                AnalyzerOptions.RemoveEmptyLineBetweenUsingDirectivesWithDifferentRootNamespace);
                         }
                     }
                     else if (!AnalyzerOptions.RemoveEmptyLineBetweenUsingDirectivesWithDifferentRootNamespace.IsEnabled(context))
@@ -125,7 +127,8 @@ namespace Roslynator.Formatting.CSharp
                         DiagnosticHelpers.ReportDiagnostic(
                             context,
                             DiagnosticRules.AddEmptyLineBetweenUsingDirectivesWithDifferentRootNamespaceOrViceVersa,
-                            Location.Create(context.Node.SyntaxTree, trailingTrivia.Last().Span.WithLength(0)));
+                            Location.Create(context.Node.SyntaxTree, trailingTrivia.Last().Span.WithLength(0)),
+                            AnalyzerOptions.RemoveEmptyLineBetweenUsingDirectivesWithDifferentRootNamespace);
                     }
                 }
             }
