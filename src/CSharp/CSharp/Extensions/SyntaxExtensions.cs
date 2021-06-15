@@ -3416,13 +3416,14 @@ namespace Roslynator.CSharp
 #pragma warning disable RCS0055
             return node.SyntaxTree.FilePath
                 + Environment.NewLine
-                + node.Kind()
+                + "Kind: " + node.Kind()
                 + Environment.NewLine
                 + "Start L: " + (startSpan.Line + 1) + " CH: " + (startSpan.Character + 1)
                 + Environment.NewLine
                 + "End L: " + (endSpan.Line + 1) + " CH: " + (endSpan.Character + 1)
                 + Environment.NewLine
                 + "Leading: " + node.GetLeadingTrivia().Count + " Trailing: " + node.GetTrailingTrivia().Count
+                + Environment.NewLine
                 + Environment.NewLine
                 + text;
 #pragma warning restore RCS0055
