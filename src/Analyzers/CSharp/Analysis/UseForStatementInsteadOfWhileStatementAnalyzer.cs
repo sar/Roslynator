@@ -44,6 +44,9 @@ namespace Roslynator.CSharp.Analysis
             if (condition.IsMissing)
                 return;
 
+            if (condition.WalkDownParentheses().IsKind(SyntaxKind.TrueLiteralExpression))
+                return;
+
             if (!condition.IsSingleLine())
                 return;
 
@@ -136,11 +139,20 @@ namespace Roslynator.CSharp.Analysis
 
             bool IsLocalVariableReferencedAfterWhileStatement()
             {
-                ContainsLocalOrParameterReferenceWalker walker = ContainsLocalOrParameterReferenceWalker.GetInstance(symbol, semanticModel, cancellationToken);
+                ContainsLocalOrParameterReferenceWalker walker = null;
+                try
+                {
+                    walker = ContainsLocalOrParameterReferenceWalker.GetInstance(symbol, semanticModel, cancellationToken);
 
-                walker.VisitList(outerStatements, index + 1);
+                    walker.VisitList(outerStatements, index + 1);
 
-                return ContainsLocalOrParameterReferenceWalker.GetResultAndFree(walker);
+                    return walker.Result;
+                }
+                finally
+                {
+                    if (walker != null)
+                        ContainsLocalOrParameterReferenceWalker.Free(walker);
+                }
             }
         }
 

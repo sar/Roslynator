@@ -14,7 +14,7 @@ using static Roslynator.Logger;
 
 namespace Roslynator.CommandLine
 {
-    internal class PhysicalLinesOfCodeCommand : AbstractLinesOfCodeCommand
+    internal class PhysicalLinesOfCodeCommand : AbstractLinesOfCodeCommand<LinesOfCodeCommandResult>
     {
         public PhysicalLinesOfCodeCommand(PhysicalLinesOfCodeCommandLineOptions options, in ProjectFilter projectFilter) : base(projectFilter)
         {
@@ -23,7 +23,7 @@ namespace Roslynator.CommandLine
 
         public PhysicalLinesOfCodeCommandLineOptions Options { get; }
 
-        public override async Task<CommandResult> ExecuteAsync(ProjectOrSolution projectOrSolution, CancellationToken cancellationToken = default)
+        public override async Task<LinesOfCodeCommandResult> ExecuteAsync(ProjectOrSolution projectOrSolution, CancellationToken cancellationToken = default)
         {
             var codeMetricsOptions = new CodeMetricsOptions(
                 includeGenerated: Options.IncludeGeneratedCode,
@@ -32,7 +32,7 @@ namespace Roslynator.CommandLine
                 includePreprocessorDirectives: Options.IncludePreprocessorDirectives,
                 ignoreBlockBoundary: Options.IgnoreBlockBoundary);
 
-            int count;
+            CodeMetricsInfo codeMetrics;
 
             if (projectOrSolution.IsProject)
             {
@@ -42,37 +42,35 @@ namespace Roslynator.CommandLine
 
                 if (service != null)
                 {
-                    CodeMetricsInfo codeMetrics = await CountLinesAsync(project, service, codeMetricsOptions, cancellationToken);
-
-                    count = codeMetrics.TotalLineCount;
+                    codeMetrics = await CountLinesAsync(project, service, codeMetricsOptions, cancellationToken);
                 }
                 else
                 {
-                    WriteLine($"Cannot count lines for '{project.FilePath}', language '{project.Language}' is not supported", ConsoleColor.Yellow, Verbosity.Minimal);
-                    return CommandResult.Fail;
+                    WriteLine($"Cannot count lines for '{project.FilePath}', language '{project.Language}' is not supported", ConsoleColors.Yellow, Verbosity.Minimal);
+                    return new LinesOfCodeCommandResult(CommandStatus.Fail, default);
                 }
             }
             else
             {
-                ImmutableDictionary<ProjectId, CodeMetricsInfo> codeMetrics = CountLines(projectOrSolution.AsSolution(), codeMetricsOptions, cancellationToken);
+                ImmutableDictionary<ProjectId, CodeMetricsInfo> codeMetricsByProject = CountLines(projectOrSolution.AsSolution(), codeMetricsOptions, cancellationToken);
 
-                count = codeMetrics.Sum(f => f.Value.TotalLineCount);
+                codeMetrics = CodeMetricsInfo.Create(codeMetricsByProject.Values);
             }
 
-            return (count > 0) ? CommandResult.Success : CommandResult.NotSuccess;
+            return new LinesOfCodeCommandResult(
+                (codeMetrics.TotalLineCount > 0) ? CommandStatus.Success : CommandStatus.NotSuccess,
+                codeMetrics);
         }
 
         private async Task<CodeMetricsInfo> CountLinesAsync(Project project, ICodeMetricsService service, CodeMetricsOptions options, CancellationToken cancellationToken)
         {
-            WriteLine($"Count lines for '{project.Name}'", ConsoleColor.Cyan, Verbosity.Minimal);
+            WriteLine($"Count lines for '{project.Name}'", ConsoleColors.Cyan, Verbosity.Minimal);
 
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             CodeMetricsInfo codeMetrics = await service.CountLinesAsync(project, LinesOfCodeKind.Physical, options, cancellationToken);
 
             stopwatch.Stop();
-
-            WriteLine(Verbosity.Minimal);
 
             WriteMetrics(
                 codeMetrics.CodeLineCount,
@@ -90,13 +88,13 @@ namespace Roslynator.CommandLine
 
         private ImmutableDictionary<ProjectId, CodeMetricsInfo> CountLines(Solution solution, CodeMetricsOptions options, CancellationToken cancellationToken)
         {
-            WriteLine($"Count lines for solution '{solution.FilePath}'", ConsoleColor.Cyan, Verbosity.Minimal);
+            WriteLine($"Count lines for solution '{solution.FilePath}'", ConsoleColors.Cyan, Verbosity.Minimal);
 
             IEnumerable<Project> projects = FilterProjects(solution);
 
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            ImmutableDictionary<ProjectId, CodeMetricsInfo> codeMetrics = CountLinesInParallel(projects, LinesOfCodeKind.Physical, options, cancellationToken);
+            ImmutableDictionary<ProjectId, CodeMetricsInfo> codeMetrics = LinesOfCodeHelpers.CountLinesInParallel(projects, LinesOfCodeKind.Physical, options, cancellationToken);
 
             stopwatch.Stop();
 
@@ -105,10 +103,8 @@ namespace Roslynator.CommandLine
                 WriteLine(Verbosity.Normal);
                 WriteLine("Lines of code by project:", Verbosity.Normal);
 
-                WriteLinesOfCode(solution, codeMetrics);
+                LinesOfCodeHelpers.WriteLinesOfCode(solution, codeMetrics);
             }
-
-            WriteLine(Verbosity.Minimal);
 
             WriteMetrics(
                 codeMetrics.Sum(f => f.Value.CodeLineCount),
@@ -143,16 +139,18 @@ namespace Roslynator.CommandLine
                             totalCommentLines.Length,
                             Math.Max(totalPreprocessorDirectiveLines.Length, totalLines.Length)))));
 
+            WriteLine(Verbosity.Minimal);
+
             if (Options.IgnoreBlockBoundary
                 || !Options.IncludeWhitespace
                 || !Options.IncludeComments
                 || !Options.IncludePreprocessorDirectives)
             {
-                WriteLine($"{totalCodeLines.PadLeft(maxDigits)} {totalCodeLineCount / (double)totalLineCount,4:P0} lines of code", ConsoleColor.Green, Verbosity.Minimal);
+                WriteLine($"{totalCodeLines.PadLeft(maxDigits)} {totalCodeLineCount / (double)totalLineCount,4:P0} lines of code", ConsoleColors.Green, Verbosity.Minimal);
             }
             else
             {
-                WriteLine($"{totalCodeLines.PadLeft(maxDigits)} lines of code", ConsoleColor.Green, Verbosity.Minimal);
+                WriteLine($"{totalCodeLines.PadLeft(maxDigits)} lines of code", ConsoleColors.Green, Verbosity.Minimal);
             }
 
             if (Options.IgnoreBlockBoundary)
@@ -168,6 +166,17 @@ namespace Roslynator.CommandLine
                 WriteLine($"{totalPreprocessorDirectiveLines.PadLeft(maxDigits)} {totalPreprocessorDirectiveLineCount / (double)totalLineCount,4:P0} preprocessor directive lines", Verbosity.Minimal);
 
             WriteLine($"{totalLines.PadLeft(maxDigits)} {totalLineCount / (double)totalLineCount,4:P0} total lines", Verbosity.Minimal);
+        }
+
+        protected override void ProcessResults(IEnumerable<LinesOfCodeCommandResult> results)
+        {
+            WriteMetrics(
+                totalCodeLineCount: results.Sum(f => f.Metrics.CodeLineCount),
+                totalBlockBoundaryLineCount: results.Sum(f => f.Metrics.BlockBoundaryLineCount),
+                totalWhitespaceLineCount: results.Sum(f => f.Metrics.WhitespaceLineCount),
+                totalCommentLineCount: results.Sum(f => f.Metrics.CommentLineCount),
+                totalPreprocessorDirectiveLineCount: results.Sum(f => f.Metrics.PreprocessorDirectiveLineCount),
+                totalLineCount: results.Sum(f => f.Metrics.TotalLineCount));
         }
 
         protected override void OperationCanceled(OperationCanceledException ex)

@@ -13,7 +13,7 @@ using static Roslynator.Logger;
 
 namespace Roslynator.CommandLine
 {
-    internal class FindSymbolsCommand : MSBuildWorkspaceCommand
+    internal class FindSymbolsCommand : MSBuildWorkspaceCommand<CommandResult>
     {
         private static readonly SymbolDisplayFormat _nameAndContainingTypesSymbolDisplayFormat = SymbolDisplayFormat.CSharpErrorMessageFormat.Update(
             typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypes,
@@ -149,9 +149,9 @@ namespace Roslynator.CommandLine
             }
 
             WriteLine(Verbosity.Minimal);
-            WriteLine($"{allSymbols.Length} {((allSymbols.Length == 1) ? "symbol" : "symbols")} found", ConsoleColor.Green, Verbosity.Minimal);
+            WriteLine($"{allSymbols.Length} {((allSymbols.Length == 1) ? "symbol" : "symbols")} found", ConsoleColors.Green, Verbosity.Minimal);
 
-            return (allSymbols.Length > 0) ? CommandResult.Success : CommandResult.NotSuccess;
+            return (allSymbols.Length > 0) ? CommandResults.Success : CommandResults.NotSuccess;
         }
 
         private static Task<ImmutableArray<ISymbol>> AnalyzeProject(
@@ -187,7 +187,7 @@ namespace Roslynator.CommandLine
 
             if (isObsolete)
             {
-                Write(kindText, ConsoleColor.DarkGray, verbosity);
+                Write(kindText, ConsoleColors.DarkGray, verbosity);
             }
             else
             {
@@ -202,8 +202,8 @@ namespace Roslynator.CommandLine
             {
                 if (colorNamespace || isObsolete)
                 {
-                    Write(namespaceText, ConsoleColor.DarkGray, verbosity);
-                    Write(".", ConsoleColor.DarkGray, verbosity);
+                    Write(namespaceText, ConsoleColors.DarkGray, verbosity);
+                    Write(".", ConsoleColors.DarkGray, verbosity);
                 }
                 else
                 {
@@ -216,7 +216,7 @@ namespace Roslynator.CommandLine
 
             if (isObsolete)
             {
-                Write(nameText, ConsoleColor.DarkGray, verbosity);
+                Write(nameText, ConsoleColors.DarkGray, verbosity);
             }
             else
             {
@@ -228,9 +228,9 @@ namespace Roslynator.CommandLine
             {
                 WriteLine(Verbosity.Diagnostic);
                 Write(indentation, Verbosity.Diagnostic);
-                Write("ID:", ConsoleColor.DarkGray, Verbosity.Diagnostic);
+                Write("ID:", ConsoleColors.DarkGray, Verbosity.Diagnostic);
                 Write(' ', padding - 2, Verbosity.Diagnostic);
-                Write(symbol.GetDocumentationCommentId(), ConsoleColor.DarkGray, Verbosity.Diagnostic);
+                Write(symbol.GetDocumentationCommentId(), ConsoleColors.DarkGray, Verbosity.Diagnostic);
             }
 
             WriteLine(verbosity);

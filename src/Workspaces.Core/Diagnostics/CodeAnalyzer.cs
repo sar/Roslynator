@@ -18,19 +18,16 @@ namespace Roslynator.Diagnostics
 {
     internal class CodeAnalyzer
     {
-        private readonly AnalyzerAssemblyList _analyzerAssemblies = new AnalyzerAssemblyList();
-
-        private readonly AnalyzerAssemblyList _analyzerReferences = new AnalyzerAssemblyList();
+        private readonly AnalyzerLoader _analyzerLoader;
 
         internal static readonly TimeSpan MinimalExecutionTime = TimeSpan.FromMilliseconds(1);
 
         public CodeAnalyzer(
-            IEnumerable<AnalyzerAssembly> analyzerAssemblies = null,
+            AnalyzerLoader analyzerLoader,
             IFormatProvider formatProvider = null,
             CodeAnalyzerOptions options = null)
         {
-            if (analyzerAssemblies != null)
-                _analyzerAssemblies.AddRange(analyzerAssemblies);
+            _analyzerLoader = analyzerLoader;
 
             FormatProvider = formatProvider;
             Options = options ?? CodeAnalyzerOptions.Default;
@@ -53,7 +50,7 @@ namespace Roslynator.Diagnostics
                 .GetTopologicallySortedProjects(cancellationToken)
                 .ToImmutableArray();
 
-            WriteLine($"Analyze solution '{solution.FilePath}'", ConsoleColor.Cyan, Verbosity.Minimal);
+            WriteLine($"Analyze solution '{solution.FilePath}'", ConsoleColors.Cyan, Verbosity.Minimal);
 
             var results = new List<ProjectAnalysisResult>();
 
@@ -77,7 +74,7 @@ namespace Roslynator.Diagnostics
                 }
                 else
                 {
-                    WriteLine($"Skip '{project.Name}' {$"{i + 1}/{projectIds.Length}"}", ConsoleColor.DarkGray, Verbosity.Minimal);
+                    WriteLine($"Skip '{project.Name}' {$"{i + 1}/{projectIds.Length}"}", ConsoleColors.DarkGray, Verbosity.Minimal);
                 }
 
                 lastElapsed = stopwatch.Elapsed;
@@ -95,7 +92,7 @@ namespace Roslynator.Diagnostics
 
         public async Task<ProjectAnalysisResult> AnalyzeProjectAsync(Project project, CancellationToken cancellationToken = default)
         {
-            WriteLine($"Analyze '{project.Name}'", ConsoleColor.Cyan, Verbosity.Minimal);
+            WriteLine($"Analyze '{project.Name}'", ConsoleColors.Cyan, Verbosity.Minimal);
 
             Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -112,14 +109,10 @@ namespace Roslynator.Diagnostics
 
         private async Task<ProjectAnalysisResult> AnalyzeProjectCoreAsync(Project project, CancellationToken cancellationToken = default)
         {
-            ImmutableArray<DiagnosticAnalyzer> analyzers = CodeAnalysisHelpers.GetAnalyzers(
-                project: project,
-                analyzerAssemblies: _analyzerAssemblies,
-                analyzerReferences: _analyzerReferences,
-                options: Options);
+            ImmutableArray<DiagnosticAnalyzer> analyzers = _analyzerLoader.GetAnalyzers(project: project);
 
             if (!analyzers.Any())
-                WriteLine($"  No analyzers found to analyze '{project.Name}'", ConsoleColor.DarkGray, Verbosity.Normal);
+                WriteLine($"  No analyzers found to analyze '{project.Name}'", ConsoleColors.DarkGray, Verbosity.Normal);
 
             if (analyzers.Any()
                 || !Options.IgnoreCompilerDiagnostics)
@@ -127,12 +120,12 @@ namespace Roslynator.Diagnostics
                 return await AnalyzeProjectCoreAsync(project, analyzers, cancellationToken).ConfigureAwait(false);
             }
 
-            return new ProjectAnalysisResult(project.Id);
+            return ProjectAnalysisResult.Create(project);
         }
 
         private async Task<ProjectAnalysisResult> AnalyzeProjectCoreAsync(Project project, ImmutableArray<DiagnosticAnalyzer> analyzers, CancellationToken cancellationToken = default)
         {
-            LogHelpers.WriteUsedAnalyzers(analyzers, null, Options, ConsoleColor.DarkGray, Verbosity.Diagnostic);
+            LogHelpers.WriteUsedAnalyzers(analyzers, null, Options, ConsoleColors.DarkGray, Verbosity.Diagnostic);
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -191,7 +184,7 @@ namespace Roslynator.Diagnostics
 
             LogHelpers.WriteDiagnostics(diagnostics, baseDirectoryPath: projectDirectoryPath, formatProvider: FormatProvider, indentation: "  ", verbosity: Verbosity.Normal);
 
-            return new ProjectAnalysisResult(project.Id, analyzers, compilerDiagnostics, diagnostics, telemetry);
+            return ProjectAnalysisResult.Create(project, compilerDiagnostics, diagnostics, telemetry);
         }
 
         private IEnumerable<Diagnostic> FilterDiagnostics(IEnumerable<Diagnostic> diagnostics, Project project, CancellationToken cancellationToken = default)
@@ -247,7 +240,7 @@ namespace Roslynator.Diagnostics
             }
 
             WriteLine(Verbosity.Minimal);
-            WriteLine($"{totalCount} {((totalCount == 1) ? "diagnostic" : "diagnostics")} found", ConsoleColor.Green, Verbosity.Minimal);
+            WriteLine($"{totalCount} {((totalCount == 1) ? "diagnostic" : "diagnostics")} found", ConsoleColors.Green, Verbosity.Minimal);
 
             void WriteExecutionTime()
             {

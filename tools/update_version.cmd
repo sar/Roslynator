@@ -2,12 +2,13 @@
 
 rem dotnet install tool -g orang.dotnet.cli
 
-set _apiVersion=2.1.0.1
-set _formattingVersion=1.2.0.1
-set _version=3.2.0.1
-set _version3=3.2.0
-set _cliVersion=0.1.4.0
-set _cliVersion3=0.1.4
+set _apiVersion=2.1.0.4
+set _formattingVersion=1.2.2.0
+set _codeAnalysisVersion=1.1.1.0
+set _version=3.2.2.0
+set _version3=3.2.2
+set _cliVersion=0.1.5.0
+set _cliVersion3=0.1.5
 set _root=..\src
 set _options=from-file -t m r -y trim-line -v n -o "orang.log" v=di
 
@@ -50,8 +51,17 @@ orang replace ^
 echo.
 
 orang replace ^
+  "%_root%\CodeAnalysis.Analyzers\CodeAnalysis.Analyzers.csproj" ^
+  "%_root%\CodeAnalysis.Analyzers.CodeFixes\CodeAnalysis.Analyzers.CodeFixes.csproj" ^
+ -c "patterns\csproj_version.txt" ^
+  %_options% ^
+ -r %_codeAnalysisVersion%
+
+echo.
+
+orang replace ^
   "%_root%\VisualStudio\source.extension.vsixmanifest" ^
-  "%_root%\VisualStudio.Refactorings\source.extension.vsixmanifest" ^
+  "%_root%\VisualStudio.2022\source.extension.vsixmanifest" ^
  -c "patterns\vsix_manifest_version.txt" ^
   %_options% ^
  -r %_version3%
@@ -61,7 +71,7 @@ echo.
 orang replace ^
   "%_root%\VisualStudio\Properties\AssemblyInfo.cs" ^
   "%_root%\VisualStudio.Common\Properties\AssemblyInfo.cs" ^
-  "%_root%\VisualStudio.Refactorings\Properties\AssemblyInfo.cs" ^
+  "%_root%\VisualStudio.2022\Properties\AssemblyInfo.cs" ^
  -c "patterns\assembly_info_version.txt" ^
   %_options% ^
  -r %_version%
@@ -94,6 +104,7 @@ echo.
 
 orang replace ^
   build.cmd ^
+  build_vs2022.cmd ^
  -c "patterns\build_script_version.txt" ^
   %_options% ^
  -r %_version3%

@@ -15,6 +15,20 @@ namespace Roslynator.CSharp.Analysis.Tests
         [Fact, Trait(Traits.Analyzer, DiagnosticIdentifiers.UnusedParameter)]
         public async Task Test_Method()
         {
+            await VerifyDiagnosticAsync(@"
+class C
+{
+    void M([|object p|], __arglist)
+    {
+    }
+}
+"
+);
+        }
+
+        [Fact, Trait(Traits.Analyzer, DiagnosticIdentifiers.UnusedParameter)]
+        public async Task Test_Lambda()
+        {
             await VerifyDiagnosticAndFixAsync(@"
 using System;
 
@@ -169,6 +183,23 @@ class C
 {
     void M(string _, string __, string _1)
     {
+    }
+}
+");
+        }
+
+        [Fact, Trait(Traits.Analyzer, DiagnosticIdentifiers.UnusedParameter)]
+        public async Task TestNoDiagnostic_ArgIterator()
+        {
+            await VerifyNoDiagnosticAsync(@"
+using System;
+
+class C
+{
+    public static int GetCount(__arglist)
+    {
+        var argIterator = new ArgIterator(__arglist);
+        return argIterator.GetRemainingCount();
     }
 }
 ");

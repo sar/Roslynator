@@ -42,7 +42,7 @@ namespace Roslynator.CommandLine
                 int maxLength = properties.Max(f => f.Key.Length);
 
                 foreach (KeyValuePair<string, string> kvp in properties)
-                    WriteLine($"Add MSBuild property {kvp.Key.PadRight(maxLength)} = {kvp.Value}", ConsoleColor.DarkGray, Verbosity.Detailed);
+                    WriteLine($"Add MSBuild property {kvp.Key.PadRight(maxLength)} = {kvp.Value}", ConsoleColors.DarkGray, Verbosity.Detailed);
             }
 
             return true;
@@ -247,31 +247,6 @@ namespace Roslynator.CommandLine
                 WriteLine($"Could not parse '{value}' as version.", Verbosity.Quiet);
                 return false;
             }
-
-            return true;
-        }
-
-        public static bool TryParsePaths(IEnumerable<string> values, out ImmutableArray<string> paths)
-        {
-            paths = ImmutableArray<string>.Empty;
-
-            if (values.Any()
-                && !TryEnsureFullPath(values, out paths))
-            {
-                return false;
-            }
-
-            if (Console.IsInputRedirected)
-            {
-                ImmutableArray<string> pathsFromInput = ConsoleHelpers.ReadRedirectedInputAsLines()
-                    .Where(f => !string.IsNullOrEmpty(f))
-                    .ToImmutableArray();
-
-                paths = paths.AddRange(pathsFromInput);
-            }
-
-            if (paths.IsEmpty)
-                paths = ImmutableArray.Create(Environment.CurrentDirectory);
 
             return true;
         }

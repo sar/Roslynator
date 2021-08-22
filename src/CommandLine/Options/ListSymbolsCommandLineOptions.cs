@@ -10,9 +10,15 @@ namespace Roslynator.CommandLine
     [Verb("list-symbols", HelpText = "Lists symbols from the specified project or solution.")]
     public class ListSymbolsCommandLineOptions : MSBuildCommandLineOptions
     {
+        [Value(
+            index: 0,
+            HelpText = "Path to one or more project/solution files.",
+            MetaName = "<PROJECT|SOLUTION>")]
+        public IEnumerable<string> Paths { get; set; }
+
         [Option(
-            longName: ParameterNames.Depth,
-            HelpText = "Defines a depth of a list of symbols. Allowed values are member, type or namespace. Default value is member.",
+            longName: OptionNames.Depth,
+            HelpText = "Defines a depth of a list of symbols. Allowed values are member (default), type or namespace.",
             MetaValue = "<DEPTH>")]
         public string Depth { get; set; }
 
@@ -22,7 +28,7 @@ namespace Roslynator.CommandLine
         public bool EmptyLineBetweenMembers { get; set; }
 
         [Option(
-            longName: ParameterNames.WrapList,
+            longName: OptionNames.WrapList,
             HelpText = "Specifies syntax lists that should be wrapped. Allowed values are attributes, parameters, base-types and constraints.")]
         public IEnumerable<string> WrapList { get; set; }
 
@@ -38,7 +44,7 @@ namespace Roslynator.CommandLine
         public IEnumerable<string> IgnoredAttributes { get; set; }
 
         [Option(
-            longName: ParameterNames.IgnoredParts,
+            longName: OptionNames.IgnoredParts,
             HelpText = "Defines parts of a symbol definition that should be excluded. Allowed values are assemblies, containing-namespace, containing-namespace-in-type-hierarchy, attributes, assembly-attributes, attribute-arguments, accessibility, modifiers, parameter-name, parameter-default-value, base-type, base-interfaces, constraints, trailing-semicolon, trailing-comma.",
             MetaValue = "<IGNORED_PARTS>")]
         public IEnumerable<string> IgnoredParts { get; set; }
@@ -68,15 +74,15 @@ namespace Roslynator.CommandLine
         public string HierarchyRoot { get; set; }
 
         [Option(
-            longName: ParameterNames.Layout,
-            HelpText = "Defines layout of a list of symbol definitions. Allowed values are namespace-list, namespace-hierarchy or type-hierarchy. Default value is namespace-list.")]
+            longName: OptionNames.Layout,
+            HelpText = "Defines layout of a list of symbol definitions. Allowed values are namespace-list (default), namespace-hierarchy or type-hierarchy.")]
         public string Layout { get; set; }
 
         [Option(
             shortName: OptionShortNames.Output,
             longName: "output",
             HelpText = "Defines path to file(s) that will store a list of symbol definitions.",
-            MetaValue = "<OUTPUT_FILE>")]
+            MetaValue = "<FILE_PATH>")]
         public IEnumerable<string> Output { get; set; }
 
         [Option(
@@ -91,7 +97,7 @@ namespace Roslynator.CommandLine
 #endif
 
         [Option(
-            longName: ParameterNames.Visibility,
+            longName: OptionNames.Visibility,
             Default = new string[] { nameof(Roslynator.Visibility.Public) },
             HelpText = "Defines one or more visibility of a type or a member. Allowed values are public, internal or private.",
             MetaValue = "<VISIBILITY>")]

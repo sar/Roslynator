@@ -16,7 +16,7 @@ using static Roslynator.Logger;
 
 namespace Roslynator.CommandLine
 {
-    internal class SpellcheckCommand : MSBuildWorkspaceCommand
+    internal class SpellcheckCommand : MSBuildWorkspaceCommand<SpellcheckCommandResult>
     {
         public SpellcheckCommand(
             SpellcheckCommandLineOptions options,
@@ -33,7 +33,7 @@ namespace Roslynator.CommandLine
 
         public SpellcheckCommandLineOptions Options { get; }
 
-        public SpellingData SpellingData { get; }
+        public SpellingData SpellingData { get; private set; }
 
         public Visibility Visibility { get; }
 
@@ -41,7 +41,7 @@ namespace Roslynator.CommandLine
 
         public string OutputPath { get; }
 
-        public override async Task<CommandResult> ExecuteAsync(ProjectOrSolution projectOrSolution, CancellationToken cancellationToken = default)
+        public override async Task<SpellcheckCommandResult> ExecuteAsync(ProjectOrSolution projectOrSolution, CancellationToken cancellationToken = default)
         {
             AssemblyResolver.Register();
 
@@ -67,14 +67,15 @@ namespace Roslynator.CommandLine
             return await FixAsync(projectOrSolution, options, projectFilter, culture, cancellationToken);
         }
 
-        internal async Task<CommandResult> FixAsync(
+        private async Task<SpellcheckCommandResult> FixAsync(
             ProjectOrSolution projectOrSolution,
             SpellingFixerOptions options,
             ProjectFilter projectFilter,
             IFormatProvider formatProvider = null,
             CancellationToken cancellationToken = default)
         {
-            SpellingFixer spellingFixer;
+            SpellingFixer spellingFixer = null;
+            ImmutableArray<SpellingFixResult> results = default;
 
             if (projectOrSolution.IsProject)
             {
@@ -84,11 +85,11 @@ namespace Roslynator.CommandLine
 
                 spellingFixer = GetSpellingFixer(solution);
 
-                WriteLine($"Fix '{project.Name}'", ConsoleColor.Cyan, Verbosity.Minimal);
+                WriteLine($"Fix '{project.Name}'", ConsoleColors.Cyan, Verbosity.Minimal);
 
                 Stopwatch stopwatch = Stopwatch.StartNew();
 
-                ImmutableArray<SpellingFixResult> results = await spellingFixer.FixProjectAsync(project, cancellationToken);
+                results = await spellingFixer.FixProjectAsync(project, cancellationToken);
 
                 stopwatch.Stop();
 
@@ -100,12 +101,14 @@ namespace Roslynator.CommandLine
 
                 spellingFixer = GetSpellingFixer(solution);
 
-                await spellingFixer.FixSolutionAsync(f => projectFilter.IsMatch(f), cancellationToken);
+                results = await spellingFixer.FixSolutionAsync(f => projectFilter.IsMatch(f), cancellationToken);
             }
 
-            WriteSummary(spellingFixer);
+            SpellingData = spellingFixer.SpellingData;
 
-            return CommandResult.Success;
+            WriteSummary(results);
+
+            return new SpellcheckCommandResult(CommandStatus.Success, results);
 
             SpellingFixer GetSpellingFixer(Solution solution)
             {
@@ -122,21 +125,40 @@ namespace Roslynator.CommandLine
             WriteLine("Spellchecking was canceled.", Verbosity.Minimal);
         }
 
-        private void WriteSummary(SpellingFixer fixer)
+        private void WriteSummary(ImmutableArray<SpellingFixResult> results)
         {
             if (!ShouldWrite(Verbosity.Normal))
-                return;
-
-            List<NewWord> newWords = fixer.NewWords.Distinct(NewWordComparer.Instance).ToList();
-
-            if (newWords.Count == 0)
                 return;
 
             var isFirst = true;
             bool isDetailed = ShouldWrite(Verbosity.Detailed);
             StringComparer comparer = StringComparer.InvariantCulture;
 
-            foreach (IGrouping<string, NewWord> grouping in newWords
+            if (ShouldWrite(Verbosity.Normal))
+            {
+                foreach (IGrouping<string, SpellingFixResult> grouping in results
+                    .Where(f => !f.HasFix && f.ContainingValue != null)
+                    .GroupBy(f => f.ContainingValue!, comparer)
+                    .OrderBy(f => f.Key, comparer))
+                {
+                    if (isFirst)
+                    {
+                        WriteLine(Verbosity.Normal);
+                        WriteLine("Words containing unknown words:", Verbosity.Normal);
+                        isFirst = false;
+                    }
+
+                    WriteLine(grouping.Key, Verbosity.Normal);
+
+                    if (isDetailed)
+                        WriteMatchingLines(grouping, comparer, ConsoleColors.Green, displayContainingValue: true);
+                }
+            }
+
+            isFirst = true;
+
+            foreach (IGrouping<string, SpellingFixResult> grouping in results
+                .Where(f => !f.HasFix)
                 .GroupBy(f => f.Value, comparer)
                 .OrderBy(f => f.Key, comparer))
             {
@@ -151,7 +173,7 @@ namespace Roslynator.CommandLine
 
                 var isFix = false;
 
-                if (fixer.SpellingData.Fixes.TryGetValue(grouping.Key, out ImmutableHashSet<SpellingFix> possibleFixes))
+                if (SpellingData.Fixes.TryGetValue(grouping.Key, out ImmutableHashSet<SpellingFix> possibleFixes))
                 {
                     ImmutableArray<SpellingFix> fixes = possibleFixes
                         .Where(
@@ -161,11 +183,11 @@ namespace Roslynator.CommandLine
 
                     if (fixes.Any())
                     {
-                        Write(": ", ConsoleColor.Gray, Verbosity.Normal);
+                        Write(": ", ConsoleColors.Gray, Verbosity.Normal);
 
                         WriteLine(
                             string.Join(", ", fixes.Select(f => TextUtility.SetTextCasing(f.Value, TextUtility.GetTextCasing(grouping.Key)))),
-                            ConsoleColor.Cyan,
+                            ConsoleColors.Cyan,
                             Verbosity.Normal);
 
                         isFix = true;
@@ -176,63 +198,104 @@ namespace Roslynator.CommandLine
                     WriteLine(Verbosity.Normal);
 
                 if (isDetailed)
-                {
-                    foreach (IGrouping<string, NewWord> grouping2 in grouping
-                        .GroupBy(f => f.FilePath)
-                        .OrderBy(f => f.Key, comparer))
-                    {
-                        Write("  ", Verbosity.Detailed);
-                        WriteLine(grouping2.Key, Verbosity.Detailed);
-
-                        foreach (NewWord newWord in grouping2.OrderBy(f => f.LineNumber))
-                        {
-                            Write("    ", Verbosity.Detailed);
-                            Write(newWord.LineNumber.ToString(), ConsoleColor.Cyan, Verbosity.Detailed);
-                            Write(" ", Verbosity.Detailed);
-
-                            string line = newWord.Line;
-                            string value = newWord.Value;
-                            int lineCharIndex = newWord.LineSpan.StartLinePosition.Character;
-                            int endIndex = lineCharIndex + value.Length;
-
-                            Write(line.Substring(0, lineCharIndex), Verbosity.Detailed);
-                            Out?.Write(">>>", Verbosity.Detailed);
-                            Write(line.Substring(lineCharIndex, value.Length), ConsoleColor.Cyan, Verbosity.Detailed);
-                            Out?.Write("<<<", Verbosity.Detailed);
-                            WriteLine(line.Substring(endIndex, line.Length - endIndex), Verbosity.Detailed);
-                        }
-                    }
-                }
+                    WriteMatchingLines(grouping, comparer, ConsoleColors.Green);
             }
 
-            if (ShouldWrite(Verbosity.Detailed))
+            WriteResults(results, SpellingFixKind.Predefined, "Auto fixes:", comparer, isDetailed);
+            WriteResults(results, SpellingFixKind.User, "User-applied fixes:", comparer, isDetailed);
+        }
+
+        private void WriteResults(
+            ImmutableArray<SpellingFixResult> results,
+            SpellingFixKind kind,
+            string heading,
+            StringComparer comparer,
+            bool isDetailed)
+        {
+            var isFirst = true;
+
+            foreach (IGrouping<string, SpellingFixResult> grouping in results
+                .Where(f => f.Kind == kind)
+                .OrderBy(f => f.Value)
+                .ThenBy(f => f.Replacement)
+                .GroupBy(f => $"{f.Value}: {f.Replacement}"))
             {
-                isFirst = true;
-
-                foreach (string containingValue in newWords
-                    .Select(f => f.ContainingValue)
-                    .Where(f => f != null)
-                    .Select(f => f!)
-                    .Distinct()
-                    .OrderBy(f => f))
+                if (isFirst)
                 {
-                    if (isFirst)
+                    WriteLine(Verbosity.Normal);
+                    WriteLine(heading, Verbosity.Normal);
+                    isFirst = false;
+                }
+
+                WriteLine(grouping.Key, Verbosity.Normal);
+
+                if (isDetailed)
+                    WriteMatchingLines(grouping, comparer, ConsoleColors.Cyan);
+            }
+        }
+
+        private void WriteMatchingLines(
+            IGrouping<string, SpellingFixResult> grouping,
+            StringComparer comparer,
+            ConsoleColors colors,
+            bool displayContainingValue = false)
+        {
+            foreach (IGrouping<string, SpellingFixResult> grouping2 in grouping
+                .GroupBy(f => f.FilePath)
+                .OrderBy(f => f.Key, comparer))
+            {
+                Write("  ", Verbosity.Detailed);
+                WriteLine(grouping2.Key, ConsoleColors.Cyan, Verbosity.Detailed);
+
+                foreach (SpellingFixResult result in grouping2
+                    .Where(f => f.SourceText != null)
+                    .Distinct(SpellingFixResultEqualityComparer.ValueAndLineSpan)
+                    .OrderBy(f => f.LineNumber)
+                    .ThenBy(f => f.LineSpan.StartLinePosition.Character))
+                {
+                    Write("    ", Verbosity.Detailed);
+                    Write(result.LineNumber.ToString(), ConsoleColors.Cyan, Verbosity.Detailed);
+                    Write(" ", Verbosity.Detailed);
+
+                    int lineStartIndex = result.LineStartIndex;
+                    int lineEndIndex = result.LineEndIndex;
+
+                    string value;
+                    int index;
+                    int endIndex;
+
+                    if (displayContainingValue)
                     {
-                        WriteLine(Verbosity.Normal);
-                        WriteLine("Words containing unknown words:", Verbosity.Normal);
-                        isFirst = false;
+                        value = result.ContainingValue!;
+                        index = result.ContainingValueIndex;
+                        endIndex = result.ContainingValueIndex + value.Length;
+                    }
+                    else
+                    {
+                        value = result.Replacement ?? result.Value;
+                        index = result.Index;
+                        endIndex = result.Index + result.Length;
                     }
 
-                    WriteLine(containingValue, Verbosity.Normal);
+                    Write(result.SourceText.Substring(lineStartIndex, index - lineStartIndex), Verbosity.Detailed);
+                    Out?.Write(">>>", Verbosity.Detailed);
+                    Write(value, colors, Verbosity.Detailed);
+                    Out?.Write("<<<", Verbosity.Detailed);
+                    WriteLine(result.SourceText.Substring(endIndex, lineEndIndex - endIndex), Verbosity.Detailed);
                 }
             }
+        }
+
+        protected override void ProcessResults(IEnumerable<SpellcheckCommandResult> results)
+        {
+            WriteSummary(results.SelectMany(f => f.SpellingResults).ToImmutableArray());
         }
 
 #if DEBUG
         public void SaveNewValues(
             SpellingData spellingData,
             FixList originalFixList,
-            List<NewWord> newWords,
+            List<SpellingFixResult> results,
             string newWordsPath = null,
             string newFixesPath = null,
             string outputPath = null,
@@ -291,7 +354,7 @@ namespace Roslynator.CommandLine
             if (newWordsPath != null)
             {
                 HashSet<string> newValues = spellingData.IgnoredValues
-                    .Concat(newWords.Select(f => f.Value))
+                    .Concat(results.Select(f => f.Value))
                     .Except(spellingData.Fixes.Items.Select(f => f.Key), WordList.DefaultComparer)
                     .ToHashSet(comparer);
 
@@ -312,7 +375,7 @@ namespace Roslynator.CommandLine
                     possibleNewFixes.AddRange(possibleFixes.Select(f => FixList.GetItemText(value, f)));
                 }
 
-                IEnumerable<string> compoundWords = newWords
+                IEnumerable<string> compoundWords = results
                     .Select(f => f.ContainingValue)
                     .Where(f => f != null)
                     .Select(f => f!);
@@ -321,39 +384,41 @@ namespace Roslynator.CommandLine
             }
 
             if (outputPath != null
-                && newWords.Count > 0)
+                && results.Count > 0)
             {
                 using (var writer = new StreamWriter(outputPath, false, Encoding.UTF8))
                 {
-                    foreach (IGrouping<string, NewWord> grouping in newWords
+                    foreach (IGrouping<string, SpellingFixResult> grouping in results
                         .GroupBy(f => f.Value, comparer)
                         .OrderBy(f => f.Key, comparer))
                     {
                         writer.WriteLine(grouping.Key);
 
-                        foreach (IGrouping<string, NewWord> grouping2 in grouping
+                        foreach (IGrouping<string, SpellingFixResult> grouping2 in grouping
+                            .Where(f => f.SourceText != null)
                             .GroupBy(f => f.FilePath)
                             .OrderBy(f => f.Key, comparer))
                         {
                             writer.Write("  ");
                             writer.WriteLine(grouping2.Key);
 
-                            foreach (NewWord newWord in grouping2.OrderBy(f => f.LineSpan.StartLine()))
+                            foreach (SpellingFixResult result in grouping2.OrderBy(f => f.LineSpan.StartLine()))
                             {
                                 writer.Write("    ");
-                                writer.Write(newWord.LineSpan.StartLine() + 1);
+                                writer.Write(result.LineNumber);
                                 writer.Write(" ");
 
-                                string line = newWord.Line;
-                                string value = newWord.Value;
-                                int lineCharIndex = newWord.LineSpan.StartLinePosition.Character;
-                                int endIndex = lineCharIndex + value.Length;
+                                int lineStartIndex = result.LineStartIndex;
+                                int lineEndIndex = result.LineEndIndex;
+                                string value = result.Replacement ?? result.Value;
+                                int index = result.Index;
+                                int endIndex = result.Index + result.Length;
 
-                                writer.Write(line.Substring(0, lineCharIndex));
-                                writer.Write(">>>");
-                                writer.Write(line.Substring(lineCharIndex, value.Length));
-                                writer.Write("<<<");
-                                writer.WriteLine(line.Substring(endIndex, line.Length - endIndex));
+                                Write(result.SourceText.Substring(lineStartIndex, index - lineStartIndex), Verbosity.Detailed);
+                                Out?.Write(">>>", Verbosity.Detailed);
+                                Write(value, ConsoleColors.Green, Verbosity.Detailed);
+                                Out?.Write("<<<", Verbosity.Detailed);
+                                WriteLine(result.SourceText.Substring(endIndex, lineEndIndex - endIndex), Verbosity.Detailed);
                             }
                         }
                     }

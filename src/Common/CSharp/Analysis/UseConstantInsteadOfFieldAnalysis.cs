@@ -77,6 +77,9 @@ namespace Roslynator.CSharp.Analysis
                 if (value == null)
                     return false;
 
+                if (value.WalkDownParentheses().IsKind(SyntaxKind.InterpolatedStringExpression))
+                    return false;
+
                 if (!semanticModel.HasConstantValue(value, cancellationToken))
                     return false;
             }
@@ -94,17 +97,26 @@ namespace Roslynator.CSharp.Analysis
 
                     if (body != null)
                     {
-                        UseConstantInsteadOfFieldWalker walker = UseConstantInsteadOfFieldWalker.GetInstance();
+                        bool canBeConvertedToConstant;
+                        UseConstantInsteadOfFieldWalker walker = null;
 
-                        walker.FieldSymbol = fieldSymbol;
-                        walker.SemanticModel = semanticModel;
-                        walker.CancellationToken = cancellationToken;
+                        try
+                        {
+                            walker = UseConstantInsteadOfFieldWalker.GetInstance();
 
-                        walker.VisitBlock(body);
+                            walker.FieldSymbol = fieldSymbol;
+                            walker.SemanticModel = semanticModel;
+                            walker.CancellationToken = cancellationToken;
 
-                        bool canBeConvertedToConstant = walker.CanBeConvertedToConstant;
+                            walker.VisitBlock(body);
 
-                        UseConstantInsteadOfFieldWalker.Free(walker);
+                            canBeConvertedToConstant = walker.CanBeConvertedToConstant;
+                        }
+                        finally
+                        {
+                            if (walker != null)
+                                UseConstantInsteadOfFieldWalker.Free(walker);
+                        }
 
                         if (!canBeConvertedToConstant)
                             return false;

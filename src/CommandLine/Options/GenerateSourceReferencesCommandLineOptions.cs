@@ -9,6 +9,12 @@ namespace Roslynator.CommandLine
 #endif
     public class GenerateSourceReferencesCommandLineOptions : MSBuildCommandLineOptions
     {
+        [Value(
+            index: 0,
+            HelpText = "The project or solution file.",
+            MetaName = "<PROJECT|SOLUTION>")]
+        public string Path { get; set; }
+
         [Option(
             longName: "output",
             Required = true,
@@ -40,8 +46,8 @@ namespace Roslynator.CommandLine
         public string Commit { get; set; }
 
         [Option(
-            longName: ParameterNames.Depth,
-            HelpText = "Defines a depth of a documentation. Allowed values are member, type or namespace. Default value is member.",
+            longName: OptionNames.Depth,
+            HelpText = "Defines a depth of a documentation. Allowed values are member (default), type or namespace.",
             MetaValue = "<DEPTH>")]
         public string Depth { get; set; }
 
@@ -51,9 +57,9 @@ namespace Roslynator.CommandLine
         public string RepositoryType { get; set; }
 
         [Option(
-            longName: ParameterNames.Visibility,
+            longName: OptionNames.Visibility,
             Default = nameof(Roslynator.Visibility.Public),
-            HelpText = "Defines a visibility of a type or a member. Allowed values are public, internal or private. Default value is public.",
+            HelpText = "Defines a visibility of a type or a member. Allowed values are public (default), internal or private.",
             MetaValue = "<VISIBILITY>")]
         public string Visibility { get; set; }
     }

@@ -128,19 +128,28 @@ namespace Roslynator.CSharp.Analysis.UnusedParameter
             if (methodSymbol.ImplementsInterfaceMember(allInterfaces: true))
                 return;
 
-            UnusedParameterWalker walker = UnusedParameterWalker.GetInstance();
-            walker.SetValues(context.SemanticModel, context.CancellationToken);
+            UnusedParameterWalker walker = null;
 
-            FindUnusedNodes(parameterInfo, walker);
-
-            if (walker.Nodes.Count > 0
-                && !MethodReferencedAsMethodGroupWalker.IsReferencedAsMethodGroup(methodDeclaration, methodSymbol, context.SemanticModel, context.CancellationToken))
+            try
             {
-                foreach (KeyValuePair<string, NodeSymbolInfo> kvp in walker.Nodes)
-                    ReportDiagnostic(context, kvp.Value.Node);
-            }
+                walker = UnusedParameterWalker.GetInstance();
 
-            UnusedParameterWalker.Free(walker);
+                walker.SetValues(context.SemanticModel, context.CancellationToken);
+
+                FindUnusedNodes(parameterInfo, walker);
+
+                if (walker.Nodes.Count > 0
+                    && !MethodReferencedAsMethodGroupWalker.IsReferencedAsMethodGroup(methodDeclaration, methodSymbol, context.SemanticModel, context.CancellationToken))
+                {
+                    foreach (KeyValuePair<string, NodeSymbolInfo> kvp in walker.Nodes)
+                        ReportDiagnostic(context, kvp.Value.Node);
+                }
+            }
+            finally
+            {
+                if (walker != null)
+                    UnusedParameterWalker.Free(walker);
+            }
         }
 
         private static void AnalyzeOperatorDeclaration(SyntaxNodeAnalysisContext context)
@@ -305,21 +314,29 @@ namespace Roslynator.CSharp.Analysis.UnusedParameter
 
         private static void Analyze(SyntaxNodeAnalysisContext context, in ParameterInfo parameterInfo, bool isIndexer = false)
         {
-            UnusedParameterWalker walker = UnusedParameterWalker.GetInstance();
-            walker.SetValues(context.SemanticModel, context.CancellationToken, isIndexer);
+            UnusedParameterWalker walker = null;
 
-            FindUnusedNodes(parameterInfo, walker);
+            try
+            {
+                walker = UnusedParameterWalker.GetInstance();
+                walker.SetValues(context.SemanticModel, context.CancellationToken, isIndexer);
 
-            foreach (KeyValuePair<string, NodeSymbolInfo> kvp in walker.Nodes)
-                ReportDiagnostic(context, kvp.Value.Node);
+                FindUnusedNodes(parameterInfo, walker);
 
-            UnusedParameterWalker.Free(walker);
+                foreach (KeyValuePair<string, NodeSymbolInfo> kvp in walker.Nodes)
+                    ReportDiagnostic(context, kvp.Value.Node);
+            }
+            finally
+            {
+                if (walker != null)
+                    UnusedParameterWalker.Free(walker);
+            }
         }
 
         private static void FindUnusedNodes(in ParameterInfo parameterInfo, UnusedParameterWalker walker)
         {
             if (parameterInfo.Parameter != null
-                && !IsDiscardName(parameterInfo.Parameter.Identifier.ValueText))
+                && !IsArgListOrDiscard(parameterInfo.Parameter))
             {
                 walker.AddParameter(parameterInfo.Parameter);
             }
@@ -327,7 +344,7 @@ namespace Roslynator.CSharp.Analysis.UnusedParameter
             {
                 foreach (ParameterSyntax parameter in parameterInfo.Parameters)
                 {
-                    if (!IsDiscardName(parameter.Identifier.ValueText))
+                    if (!IsArgListOrDiscard(parameter))
                         walker.AddParameter(parameter);
                 }
             }
@@ -340,6 +357,12 @@ namespace Roslynator.CSharp.Analysis.UnusedParameter
 
             if (walker.Nodes.Count > 0)
                 walker.Visit(parameterInfo.Node);
+        }
+
+        private static bool IsArgListOrDiscard(ParameterSyntax parameter)
+        {
+            return parameter.Identifier.IsKind(SyntaxKind.ArgListKeyword)
+                || IsDiscardName(parameter.Identifier.ValueText);
         }
 
         private static bool IsDiscardName(string value)

@@ -7,12 +7,17 @@ namespace Roslynator.CommandLine
 {
     public abstract class AbstractGenerateDocCommandLineOptions : MSBuildCommandLineOptions
     {
+        [Value(
+            index: 0,
+            HelpText = "The project or solution file.",
+            MetaName = "<PROJECT|SOLUTION>")]
+        public string Path { get; set; }
+
         [Option(
-            shortName: OptionShortNames.Heading,
             longName: "heading",
             Required = true,
             HelpText = "Defines a heading of the root documentation file.",
-            MetaValue = "<ROOT_FILE_HEADING>")]
+            MetaValue = "<HEADING>")]
         public string Heading { get; set; }
 
         [Option(
@@ -20,12 +25,12 @@ namespace Roslynator.CommandLine
             longName: "output",
             Required = true,
             HelpText = "Defines a path for the output directory.",
-            MetaValue = "<OUTPUT_DIRECTORY>")]
+            MetaValue = "<DIRECTORY_PATH>")]
         public string Output { get; set; }
 
         [Option(
-            longName: ParameterNames.Depth,
-            HelpText = "Defines a depth of a documentation. Allowed values are member, type or namespace. Default value is member.",
+            longName: OptionNames.Depth,
+            HelpText = "Defines a depth of a documentation. Allowed values are member (default), type or namespace.",
             MetaValue = "<DEPTH>")]
         public string Depth { get; set; }
 
@@ -51,9 +56,9 @@ namespace Roslynator.CommandLine
         public bool ScrollToContent { get; set; }
 
         [Option(
-            longName: ParameterNames.Visibility,
+            longName: OptionNames.Visibility,
             Default = nameof(Roslynator.Visibility.Public),
-            HelpText = "Defines a visibility of a type or a member. Allowed values are public, internal or private. Default value is public.",
+            HelpText = "Defines a visibility of a type or a member. Allowed values are public (default), internal or private.",
             MetaValue = "<VISIBILITY>")]
         public string Visibility { get; set; }
     }

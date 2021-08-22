@@ -22,16 +22,15 @@ A collection of 500+ [analyzers](src/Analyzers/README.md), [refactorings](src/Re
 
 ### Donation
 
-> "It's so good, that I made my first ever donation." Mateusz Piasecki, Roslynator user.
-
-Although Roslynator products are free of charge, any [donation](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BX85UA346VTN6) is welcome and supports further development.
+* Although Roslynator products are free of charge, any [donation](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=BX85UA346VTN6) is welcome and supports further development.
+* [List of donations](Donations.md)
 
 ## Extensions for Visual Studio
 
 | Extension | Comment |
 | --- | --- |
+| [Roslynator 2022 (Preview)](https://marketplace.visualstudio.com/items?itemName=josefpihrt.Roslynator2022) | contains analyzers, refactorings and fixes for CS diagnostics. |
 | [Roslynator 2019](https://marketplace.visualstudio.com/items?itemName=josefpihrt.Roslynator2019) | contains analyzers, refactorings and fixes for CS diagnostics. |
-| [Roslynator 2017](https://marketplace.visualstudio.com/items?itemName=josefpihrt.Roslynator2017) | contains analyzers, refactorings and fixes for CS diagnostics. This extension is no longer in development. |
 
 ## Extensions for Visual Studio Code
 

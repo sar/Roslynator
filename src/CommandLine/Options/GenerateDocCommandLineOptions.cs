@@ -13,29 +13,29 @@ namespace Roslynator.CommandLine
         [Option(
             longName: "additional-xml-documentation",
             HelpText = "Defines one or more xml documentation files that should be included. These files can contain a documentation for namespaces, for instance.",
-            MetaValue = "<XML_DOCUMENTATION_FILE>")]
+            MetaValue = "<FILE_PATH>")]
         public IEnumerable<string> AdditionalXmlDocumentation { get; set; }
 
         [Option(
-            longName: ParameterNames.IgnoredMemberParts,
+            longName: OptionNames.IgnoredMemberParts,
             HelpText = "Defines parts of a member documentation that should be excluded. Allowed values are overloads, containing-type, containing-assembly, obsolete-message, summary, declaration, type-parameters, parameters, return-value, implements, attributes, exceptions, examples, remarks and see-also.",
             MetaValue = "<IGNORED_MEMBER_PARTS>")]
         public IEnumerable<string> IgnoredMemberParts { get; set; }
 
         [Option(
-            longName: ParameterNames.IgnoredNamespaceParts,
+            longName: OptionNames.IgnoredNamespaceParts,
             HelpText = "Defines parts of a namespace documentation that should be excluded. Allowed values are content, containing-namespace, summary, examples, remarks, classes, structs, interfaces, enums, delegates and see-also.",
             MetaValue = "<IGNORED_NAMESPACE_PARTS>")]
         public IEnumerable<string> IgnoredNamespaceParts { get; set; }
 
         [Option(
-            longName: ParameterNames.IgnoredRootParts,
+            longName: OptionNames.IgnoredRootParts,
             HelpText = "Defines parts of a root documentation that should be excluded. Allowed values are content, namespaces, class-hierarchy, types and other.",
             MetaValue = "<IGNORED_ROOT_PARTS>")]
         public IEnumerable<string> IgnoredRootParts { get; set; }
 
         [Option(
-            longName: ParameterNames.IgnoredTypeParts,
+            longName: OptionNames.IgnoredTypeParts,
             HelpText = "Defines parts of a type documentation that should be excluded. Allowed values are content, containing-namespace, containing-assembly, obsolete-message, summary, declaration, type-parameters, parameters, return-value, inheritance, attributes, derived, implements, examples, remarks, constructors, fields, indexers, properties, methods, operators, events, explicit-interface-implementations, extension-methods, classes, structs, interfaces, enums, delegates and see-also.",
             MetaValue = "<IGNORED_TYPE_PARTS>")]
         public IEnumerable<string> IgnoredTypeParts { get; set; }
@@ -46,7 +46,7 @@ namespace Roslynator.CommandLine
         public bool IncludeAllDerivedTypes { get; set; }
 
         [Option(
-            longName: ParameterNames.IncludeContainingNamespace,
+            longName: OptionNames.IncludeContainingNamespace,
             HelpText = "Defines parts of a documentation that should include containing namespace. Allowed values are class-hierarchy, containing-type, parameter, return-type, base-type, attribute, derived-type, implemented-interface, implemented-member, exception, see-also and all.",
             MetaValue = "<INCLUDE_CONTAINING_NAMESPACE>")]
         public IEnumerable<string> IncludeContainingNamespace { get; set; }
@@ -62,14 +62,14 @@ namespace Roslynator.CommandLine
         public bool IncludeInheritedInterfaceMembers { get; set; }
 
         [Option(
-            longName: ParameterNames.IncludeSystemNamespace,
+            longName: OptionNames.IncludeSystemNamespace,
             HelpText = "Indicates whether namespace should be included when a type is directly contained in namespace 'System'.")]
         public bool IncludeSystemNamespace { get; set; }
 
         [Option(
             longName: "inheritance-style",
             Default = DefaultValues.InheritanceStyle,
-            HelpText = "Defines a style of a type inheritance. Allowed values are horizontal or vertical. Default value is horizontal.",
+            HelpText = "Defines a style of a type inheritance. Allowed values are horizontal (default) or vertical.",
             MetaValue = "<INHERITANCE_STYLE>")]
         public InheritanceStyle InheritanceStyle { get; set; }
 
@@ -106,7 +106,7 @@ namespace Roslynator.CommandLine
         public bool OmitInheritedAttributes { get; set; }
 
         [Option(
-            longName: ParameterNames.OmitMemberParts,
+            longName: OptionNames.OmitMemberParts,
             HelpText = "Defines parts of member definition that should be omitted. Allowed values are constant-value, implements, inherited-from and overrides.")]
         public IEnumerable<string> OmitMemberParts { get; set; }
 

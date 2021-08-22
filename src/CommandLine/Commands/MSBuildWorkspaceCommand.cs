@@ -15,7 +15,7 @@ using static Roslynator.Logger;
 
 namespace Roslynator.CommandLine
 {
-    internal abstract class MSBuildWorkspaceCommand
+    internal abstract class MSBuildWorkspaceCommand<TCommandResult> where TCommandResult : CommandResult
     {
         protected MSBuildWorkspaceCommand(in ProjectFilter projectFilter)
         {
@@ -29,10 +29,16 @@ namespace Roslynator.CommandLine
 
         public ProjectFilter ProjectFilter { get; }
 
-        public abstract Task<CommandResult> ExecuteAsync(ProjectOrSolution projectOrSolution, CancellationToken cancellationToken = default);
+        public abstract Task<TCommandResult> ExecuteAsync(ProjectOrSolution projectOrSolution, CancellationToken cancellationToken = default);
 
-        public async Task<CommandResult> ExecuteAsync(string path, string msbuildPath = null, IEnumerable<string> properties = null)
+        public async Task<CommandStatus> ExecuteAsync(IEnumerable<string> paths, string msbuildPath = null, IEnumerable<string> properties = null)
         {
+            if (paths == null)
+                throw new ArgumentNullException(nameof(paths));
+
+            if (!paths.Any())
+                throw new ArgumentException("", nameof(paths));
+
             MSBuildWorkspace workspace = null;
 
             try
@@ -40,7 +46,7 @@ namespace Roslynator.CommandLine
                 workspace = CreateMSBuildWorkspace(msbuildPath, properties);
 
                 if (workspace == null)
-                    return CommandResult.Fail;
+                    return CommandStatus.Fail;
 
                 workspace.WorkspaceFailed += (sender, args) => WorkspaceFailed(sender, args);
 
@@ -55,53 +61,31 @@ namespace Roslynator.CommandLine
 
                 try
                 {
-                    if (string.IsNullOrEmpty(path))
+                    var status = CommandStatus.NotSuccess;
+                    var results = new List<TCommandResult>();
+
+                    foreach (string path in paths)
                     {
-                        path = FindProjectOrSolutionFile(Environment.CurrentDirectory);
-                    }
-                    else
-                    {
-                        if (!Path.IsPathRooted(path))
-                            path = Path.GetFullPath(path);
+                        TCommandResult result = await ExecuteAsync(path, workspace, cancellationToken);
 
-                        if (!File.Exists(path))
-                            throw new FileNotFoundException($"Project or solution file not found: {path}");
-                    }
+                        results.Add(result);
 
-                    CommandResult? result = await ExecuteAsync(path, workspace, ConsoleProgressReporter.Default, cancellationToken);
+                        if (result.Status != CommandStatus.NotSuccess)
+                            status = result.Status;
 
-                    if (result != null)
-                        return result.Value;
-
-                    ProjectOrSolution projectOrSolution = await OpenProjectOrSolutionAsync(path, workspace, ConsoleProgressReporter.Default, cancellationToken);
-
-                    if (!projectOrSolution.IsDefault)
-                    {
-                        Solution solution = projectOrSolution.AsSolution();
-
-                        if (solution != null)
+                        if (status == CommandStatus.Fail
+                            || status == CommandStatus.Canceled)
                         {
-                            foreach (string name in ProjectFilter.Names)
-                            {
-                                if (!solution.ContainsProject(name))
-                                {
-                                    WriteLine($"Project '{name}' does not exist.", Verbosity.Quiet);
-                                    return CommandResult.Fail;
-                                }
-                            }
-
-                            foreach (string name in ProjectFilter.IgnoredNames)
-                            {
-                                if (!solution.ContainsProject(name))
-                                {
-                                    WriteLine($"Project '{name}' does not exist.", Verbosity.Quiet);
-                                    return CommandResult.Fail;
-                                }
-                            }
+                            break;
                         }
 
-                        return await ExecuteAsync(projectOrSolution, cancellationToken);
+                        workspace.CloseSolution();
                     }
+
+                    if (results.Count > 1)
+                        ProcessResults(results);
+
+                    return status;
                 }
                 catch (OperationCanceledException ex)
                 {
@@ -126,7 +110,75 @@ namespace Roslynator.CommandLine
                 workspace?.Dispose();
             }
 
-            return CommandResult.Canceled;
+            return CommandStatus.Canceled;
+        }
+
+        private async Task<TCommandResult> ExecuteAsync(string path, MSBuildWorkspace workspace, CancellationToken cancellationToken)
+        {
+            if (!File.Exists(path))
+                throw new FileNotFoundException($"Project or solution file not found: {path}");
+
+            TCommandResult result = await ExecuteAsync(path, workspace, ConsoleProgressReporter.Default, cancellationToken);
+
+            if (result != null)
+                return result;
+
+            ProjectOrSolution projectOrSolution = await OpenProjectOrSolutionAsync(path, workspace, ConsoleProgressReporter.Default, cancellationToken);
+
+            Solution solution = projectOrSolution.AsSolution();
+
+            if (solution != null
+                && !VerifyProjectNames(solution))
+            {
+                return null;
+            }
+
+            return await ExecuteAsync(projectOrSolution, cancellationToken);
+        }
+
+        private bool VerifyProjectNames(Solution solution)
+        {
+            List<ProjectName> projectNames = solution.Projects.Select(f => ProjectName.Create(f.Name)).ToList();
+
+            if (ShouldWrite(Verbosity.Detailed))
+            {
+                WriteLine("List of projects:", Verbosity.Detailed);
+
+                foreach (IGrouping<string, ProjectName> grouping in projectNames
+                    .OrderBy(f => f.NameWithoutMoniker)
+                    .GroupBy(f => f.NameWithoutMoniker))
+                {
+                    WriteLine($"  {grouping.Key}", Verbosity.Detailed);
+
+                    foreach (string moniker in grouping
+                        .Select(f => f.Moniker)
+                        .Where(f => f != null)
+                        .OrderBy(f => f))
+                    {
+                        WriteLine($"    {moniker}", Verbosity.Detailed);
+                    }
+                }
+            }
+
+            ImmutableHashSet<ProjectName> values = (ProjectFilter.Names.Count > 0)
+                ? ProjectFilter.Names
+                : ProjectFilter.IgnoredNames;
+
+            foreach (ProjectName value in values)
+            {
+                if (!projectNames.Any(f => string.Equals(f.Name, value.Name, StringComparison.Ordinal))
+                    && !projectNames.Any(f => string.Equals(f.NameWithoutMoniker, value.NameWithoutMoniker, StringComparison.Ordinal)))
+                {
+                    WriteLine($"Project '{value}' does not exist.", Verbosity.Quiet);
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        protected virtual void ProcessResults(IEnumerable<TCommandResult> results)
+        {
         }
 
         protected virtual void OperationCanceled(OperationCanceledException ex)
@@ -136,16 +188,16 @@ namespace Roslynator.CommandLine
 
         protected virtual void WorkspaceFailed(object sender, WorkspaceDiagnosticEventArgs e)
         {
-            WriteLine($"  {e.Diagnostic.Message}", e.Diagnostic.Kind.GetColor(), Verbosity.Detailed);
+            WriteLine($"  {e.Diagnostic.Message}", e.Diagnostic.Kind.GetColors(), Verbosity.Detailed);
         }
 
-        protected virtual Task<CommandResult?> ExecuteAsync(
+        protected virtual Task<TCommandResult> ExecuteAsync(
             string path,
             MSBuildWorkspace workspace,
             IProgress<ProjectLoadProgress> progress = null,
             CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(default(CommandResult?));
+            return Task.FromResult(default(TCommandResult));
         }
 
         private async Task<ProjectOrSolution> OpenProjectOrSolutionAsync(
@@ -180,7 +232,7 @@ namespace Roslynator.CommandLine
             {
                 MSBuildLocator.RegisterMSBuildPath(msbuildPath);
             }
-            else if (TryGetSingleInstance(out VisualStudioInstance instance))
+            else if (TryGetVisualStudioInstance(out VisualStudioInstance instance))
             {
                 MSBuildLocator.RegisterInstance(instance);
                 msbuildPath = instance.MSBuildPath;
@@ -190,7 +242,7 @@ namespace Roslynator.CommandLine
                 return null;
             }
 
-            WriteLine($"MSBuild location is '{msbuildPath}'", Verbosity.Diagnostic);
+            WriteLine($"MSBuild location is '{msbuildPath}'", Verbosity.Detailed);
 
             if (!ParseHelpers.TryParseMSBuildProperties(rawProperties, out Dictionary<string, string> properties))
                 return null;
@@ -205,41 +257,39 @@ namespace Roslynator.CommandLine
             return MSBuildWorkspace.Create(properties);
         }
 
-        private static bool TryGetSingleInstance(out VisualStudioInstance instance)
+        private static bool TryGetVisualStudioInstance(out VisualStudioInstance instance)
         {
-            using (IEnumerator<VisualStudioInstance> en = MSBuildLocator.QueryVisualStudioInstances()
+            List<VisualStudioInstance> instances = MSBuildLocator.QueryVisualStudioInstances()
                 .Distinct(VisualStudioInstanceComparer.MSBuildPath)
-                .GetEnumerator())
+                .ToList();
+
+            if (instances.Count == 0)
             {
-                if (!en.MoveNext())
-                {
-                    WriteLine($"MSBuild location not found. Use option '--{ParameterNames.MSBuildPath}' to specify MSBuild location", Verbosity.Quiet);
-                    instance = null;
-                    return false;
-                }
-
-                VisualStudioInstance firstInstance = en.Current;
-
-                if (en.MoveNext())
-                {
-                    WriteLine("Multiple MSBuild locations found:", Verbosity.Quiet);
-
-                    WriteLine($"  {firstInstance.MSBuildPath}", Verbosity.Quiet);
-
-                    do
-                    {
-                        WriteLine($"  {en.Current.MSBuildPath}", Verbosity.Quiet);
-
-                    } while (en.MoveNext());
-
-                    WriteLine($"Use option '--{ParameterNames.MSBuildPath}' to specify MSBuild location", Verbosity.Quiet);
-                    instance = null;
-                    return false;
-                }
-
-                instance = firstInstance;
-                return true;
+                WriteLine($"MSBuild location not found. Use option '-{OptionShortNames.MSBuildPath}, --{OptionNames.MSBuildPath}' to specify MSBuild location", Verbosity.Quiet);
+                instance = null;
+                return false;
             }
+
+            WriteLine("Available MSBuild locations:", Verbosity.Diagnostic);
+
+            foreach (VisualStudioInstance vsi in instances.OrderBy(f => f.Version))
+                WriteLine($"  {vsi.Name}, Version: {vsi.Version}, Path: {vsi.MSBuildPath}", Verbosity.Diagnostic);
+
+            instances = instances
+                .GroupBy(f => f.Version)
+                .OrderByDescending(f => f.Key)
+                .First()
+                .ToList();
+
+            if (instances.Count > 1)
+            {
+                WriteLine($"Cannot choose MSBuild location automatically. Use option '-{OptionShortNames.MSBuildPath}, --{OptionNames.MSBuildPath}' to specify MSBuild location", Verbosity.Quiet);
+                instance = null;
+                return false;
+            }
+
+            instance = instances[0];
+            return true;
         }
 
         private protected IEnumerable<Project> FilterProjects(
@@ -273,7 +323,7 @@ namespace Roslynator.CommandLine
                 }
                 else
                 {
-                    WriteLine($"  Skip '{project.Name}'", ConsoleColor.DarkGray, Verbosity.Normal);
+                    WriteLine($"  Skip '{project.Name}'", ConsoleColors.DarkGray, Verbosity.Normal);
                 }
             }
         }
@@ -326,52 +376,6 @@ namespace Roslynator.CommandLine
             }
         }
 
-        public static string FindProjectOrSolutionFile(string directoryPath)
-        {
-            string solutionPath = FindFile(
-                Directory.EnumerateFiles(directoryPath, "*.sln", SearchOption.TopDirectoryOnly),
-                $"Multiple MSBuild solution files found in '{directoryPath}'");
-
-            string projectPath = FindFile(
-                Directory.EnumerateFiles(directoryPath, "*.*proj", SearchOption.TopDirectoryOnly)
-                    .Where(f => !string.Equals(".xproj", Path.GetExtension(f), StringComparison.OrdinalIgnoreCase)),
-                $"Multiple MSBuild projects files found in '{directoryPath}'");
-
-            if (solutionPath != null
-                && projectPath != null)
-            {
-                throw new FileNotFoundException($"Both MSBuild project file and solution file found in '{directoryPath}'");
-            }
-
-            if (solutionPath == null
-                && projectPath == null)
-            {
-                throw new FileNotFoundException($"Could not find MSBuild project or solution file in '{directoryPath}'");
-            }
-
-            return solutionPath ?? projectPath;
-
-            static string FindFile(IEnumerable<string> files, string errorMessage)
-            {
-                using (IEnumerator<string> en = files.GetEnumerator())
-                {
-                    if (en.MoveNext())
-                    {
-                        string file = en.Current;
-
-                        if (en.MoveNext())
-                            throw new FileNotFoundException(errorMessage);
-
-                        return file;
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
-            }
-        }
-
         protected class ConsoleProgressReporter : IProgress<ProjectLoadProgress>
         {
             public static ConsoleProgressReporter Default { get; } = new ConsoleProgressReporter();
@@ -420,7 +424,7 @@ namespace Roslynator.CommandLine
                 }
                 else
                 {
-                    WriteLine(text, ConsoleColor.DarkGray, Verbosity.Diagnostic);
+                    WriteLine(text, ConsoleColors.DarkGray, Verbosity.Diagnostic);
                 }
             }
         }

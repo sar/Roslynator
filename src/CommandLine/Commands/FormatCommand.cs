@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
@@ -16,7 +17,7 @@ using static Roslynator.Logger;
 
 namespace Roslynator.CommandLine
 {
-    internal class FormatCommand : MSBuildWorkspaceCommand
+    internal class FormatCommand : MSBuildWorkspaceCommand<FormatCommandResult>
     {
         public FormatCommand(FormatCommandLineOptions options, in ProjectFilter projectFilter) : base(projectFilter)
         {
@@ -25,7 +26,7 @@ namespace Roslynator.CommandLine
 
         public FormatCommandLineOptions Options { get; }
 
-        public override async Task<CommandResult> ExecuteAsync(ProjectOrSolution projectOrSolution, CancellationToken cancellationToken = default)
+        public override async Task<FormatCommandResult> ExecuteAsync(ProjectOrSolution projectOrSolution, CancellationToken cancellationToken = default)
         {
             ImmutableArray<DocumentId> formattedDocuments;
 
@@ -46,14 +47,14 @@ namespace Roslynator.CommandLine
                 formattedDocuments = await FormatSolutionAsync(solution, options, cancellationToken);
             }
 
-            return (formattedDocuments.Length > 0) ? CommandResult.Success : CommandResult.NotSuccess;
+            return new FormatCommandResult((formattedDocuments.Length > 0) ? CommandStatus.Success : CommandStatus.NotSuccess, formattedDocuments.Length);
         }
 
         private async Task<ImmutableArray<DocumentId>> FormatSolutionAsync(Solution solution, CodeFormatterOptions options, CancellationToken cancellationToken)
         {
             string solutionDirectory = Path.GetDirectoryName(solution.FilePath);
 
-            WriteLine($"Analyze solution '{solution.FilePath}'", ConsoleColor.Cyan, Verbosity.Minimal);
+            WriteLine($"Analyze solution '{solution.FilePath}'", ConsoleColors.Cyan, Verbosity.Minimal);
 
             Stopwatch stopwatch = Stopwatch.StartNew();
 
@@ -96,14 +97,14 @@ namespace Roslynator.CommandLine
                 if (!solution.Workspace.TryApplyChanges(newSolution))
                 {
                     Debug.Fail($"Cannot apply changes to solution '{solution.FilePath}'");
-                    WriteLine($"Cannot apply changes to solution '{solution.FilePath}'", ConsoleColor.Yellow, Verbosity.Diagnostic);
+                    WriteLine($"Cannot apply changes to solution '{solution.FilePath}'", ConsoleColors.Yellow, Verbosity.Diagnostic);
                 }
             }
 
             int count = changedDocuments.Sum(f => f.Length);
 
             WriteLine(Verbosity.Minimal);
-            WriteLine($"{count} {((count == 1) ? "document" : "documents")} formatted", ConsoleColor.Green, Verbosity.Minimal);
+            WriteLine($"{count} {((count == 1) ? "document" : "documents")} formatted", ConsoleColors.Green, Verbosity.Minimal);
 
             WriteLine(Verbosity.Minimal);
             WriteLine($"Done formatting solution '{solution.FilePath}' in {stopwatch.Elapsed:mm\\:ss\\.ff}", Verbosity.Minimal);
@@ -136,14 +137,24 @@ namespace Roslynator.CommandLine
                 if (!solution.Workspace.TryApplyChanges(newSolution))
                 {
                     Debug.Fail($"Cannot apply changes to solution '{newSolution.FilePath}'");
-                    WriteLine($"Cannot apply changes to solution '{newSolution.FilePath}'", ConsoleColor.Yellow, Verbosity.Diagnostic);
+                    WriteLine($"Cannot apply changes to solution '{newSolution.FilePath}'", ConsoleColors.Yellow, Verbosity.Diagnostic);
                 }
             }
 
-            WriteLine(Verbosity.Minimal);
-            WriteLine($"{formattedDocuments.Length} {((formattedDocuments.Length == 1) ? "document" : "documents")} formatted", ConsoleColor.Green, Verbosity.Minimal);
+            WriteSummary(formattedDocuments.Length);
 
             return formattedDocuments;
+        }
+
+        protected override void ProcessResults(IEnumerable<FormatCommandResult> results)
+        {
+            WriteSummary(results.Sum(f => f.Count));
+        }
+
+        private static void WriteSummary(int count)
+        {
+            WriteLine(Verbosity.Minimal);
+            WriteLine($"{count} {((count == 1) ? "document" : "documents")} formatted", ConsoleColors.Green, Verbosity.Minimal);
         }
 
         protected override void OperationCanceled(OperationCanceledException ex)

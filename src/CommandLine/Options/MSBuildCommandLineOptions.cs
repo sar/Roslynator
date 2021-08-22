@@ -7,35 +7,29 @@ using CommandLine;
 namespace Roslynator.CommandLine
 {
     // Files, IgnoredFiles
-    public abstract class MSBuildCommandLineOptions : AbstractCommandLineOptions
+    public abstract class MSBuildCommandLineOptions : BaseCommandLineOptions
     {
-        [Value(
-            index: 0,
-            HelpText = "The project or solution file.",
-            MetaValue = "<PROJECT|SOLUTION>")]
-        public string Path { get; set; }
-
         [Option(
-            longName: ParameterNames.IgnoredProjects,
+            longName: OptionNames.IgnoredProjects,
             HelpText = "Defines projects that should not be analyzed.",
             MetaValue = "<PROJECT_NAME>")]
         public IEnumerable<string> IgnoredProjects { get; set; }
 
         [Option(
             longName: "language",
-            HelpText = "Defines project language. Allowed values are cs [csharp] or vb [visual basic]",
+            HelpText = "Defines project language. Allowed values are cs[harp] or v[isual-]b[asic]",
             MetaValue = "<LANGUAGE>")]
         public string Language { get; set; }
 
         [Option(
             shortName: OptionShortNames.MSBuildPath,
-            longName: ParameterNames.MSBuildPath,
-            HelpText = "Defines a path to MSBuild. This option must be specified if there are multiple locations of MSBuild (usually multiple installations of Visual Studio).",
-            MetaValue = "<MSBUILD_PATH>")]
+            longName: OptionNames.MSBuildPath,
+            HelpText = "Defines a path to MSBuild directory.",
+            MetaValue = "<DIRECTORY_PATH>")]
         public string MSBuildPath { get; set; }
 
         [Option(
-            longName: ParameterNames.Projects,
+            longName: OptionNames.Projects,
             HelpText = "Defines projects that should be analyzed.",
             MetaValue = "<PROJECT_NAME>")]
         public IEnumerable<string> Projects { get; set; }
@@ -71,7 +65,7 @@ namespace Roslynator.CommandLine
             if (Projects?.Any() == true
                 && IgnoredProjects?.Any() == true)
             {
-                Logger.WriteLine($"Cannot specify both '{ParameterNames.Projects}' and '{ParameterNames.IgnoredProjects}'.", Roslynator.Verbosity.Quiet);
+                Logger.WriteLine($"Cannot specify both '{OptionNames.Projects}' and '{OptionNames.IgnoredProjects}'.", Roslynator.Verbosity.Quiet);
                 return false;
             }
 

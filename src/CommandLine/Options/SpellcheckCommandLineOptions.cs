@@ -8,6 +8,12 @@ namespace Roslynator.CommandLine
     [Verb("spellcheck", HelpText = "Searches the specified project or solution for possible misspellings or typos.")]
     public sealed class SpellcheckCommandLineOptions : MSBuildCommandLineOptions
     {
+        [Value(
+            index: 0,
+            HelpText = "Path to one or more project/solution files.",
+            MetaName = "<PROJECT|SOLUTION>")]
+        public IEnumerable<string> Paths { get; set; }
+
         [Option(
             longName: "case-sensitive",
             HelpText = "Specifies case-sensitive matching.")]
@@ -26,7 +32,7 @@ namespace Roslynator.CommandLine
         public bool DryRun { get; set; }
 
         [Option(
-            longName: ParameterNames.IgnoredScope,
+            longName: OptionNames.IgnoredScope,
             HelpText = "Defines syntax that should not be analyzed. Allowed values are comment, type, member, local, parameter, non-symbol and symbol.",
             MetaValue = "<SCOPE>")]
         public IEnumerable<string> IgnoredScope { get; set; }
@@ -44,19 +50,20 @@ namespace Roslynator.CommandLine
         [Option(
             longName: "min-word-length",
             Default = 3,
-            HelpText = "Specifies minimal word length to be checked. Default value is 3.")]
+            HelpText = "Specifies minimal word length to be checked. Default value is 3.",
+            MetaValue = "<NUM>")]
         public int MinWordLength { get; set; }
 
         [Option(
-            longName: ParameterNames.Scope,
+            longName: OptionNames.Scope,
             HelpText = "Defines syntax that should be analyzed. Allowed values are comment, type, member, local, parameter, non-symbol and symbol.",
             MetaValue = "<SCOPE>")]
         public IEnumerable<string> Scope { get; set; }
 
         [Option(
-            longName: ParameterNames.Visibility,
+            longName: OptionNames.Visibility,
             Default = nameof(Roslynator.Visibility.Public),
-            HelpText = "Defines a  maximal visibility of a symbol to be fixable. Allowed values are public, internal or private. Default value is public.",
+            HelpText = "Defines a  maximal visibility of a symbol to be fixable. Allowed values are public (default), internal or private.",
             MetaValue = "<VISIBILITY>")]
         public string Visibility { get; set; }
 
