@@ -145,6 +145,14 @@ namespace Roslynator.CSharp.Spelling
 
                         break;
                     }
+                case SyntaxKind.EventDeclaration:
+                case SyntaxKind.EventFieldDeclaration:
+                    {
+                        if (ShouldVisit(SpellingScopeFilter.Event))
+                            base.VisitTupleType(node);
+
+                        break;
+                    }
                 case SyntaxKind.ClassDeclaration:
                     {
                         if (ShouldVisit(SpellingScopeFilter.Class))
@@ -451,6 +459,9 @@ namespace Roslynator.CSharp.Spelling
 
         public override void VisitParameter(ParameterSyntax node)
         {
+            if (node.Identifier.IsKind(SyntaxKind.ArgListKeyword))
+                return;
+
             if (ShouldVisit(SpellingScopeFilter.Parameter))
                 AnalyzeIdentifier(node.Identifier);
 

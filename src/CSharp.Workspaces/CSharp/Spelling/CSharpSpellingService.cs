@@ -94,7 +94,7 @@ namespace Roslynator.CSharp.Spelling
                     (token.IsKind(SyntaxKind.IdentifierToken)) ? token : default);
             }
 
-            throw new InvalidOperationException();
+            throw new InvalidOperationException($"Unexpected syntax at {location}");
         }
     }
 }
