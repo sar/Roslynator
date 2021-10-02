@@ -18,7 +18,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.DuplicateAttribute); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS0579_DuplicateAttribute); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -39,17 +39,17 @@ namespace Roslynator.CSharp.CodeFixes
             {
                 CodeAction codeAction = CodeAction.Create(
                     "Remove duplicate attribute",
-                    cancellationToken =>
+                    ct =>
                     {
                         SeparatedSyntaxList<AttributeSyntax> attributes = attributeList.Attributes;
 
                         if (attributes.Count == 1)
                         {
-                            return context.Document.RemoveNodeAsync(attributeList, SyntaxRemoveOptions.KeepUnbalancedDirectives, cancellationToken);
+                            return context.Document.RemoveNodeAsync(attributeList, SyntaxRemoveOptions.KeepUnbalancedDirectives, ct);
                         }
                         else
                         {
-                            return context.Document.RemoveNodeAsync(attribute, SyntaxRemoveOptions.KeepUnbalancedDirectives, cancellationToken);
+                            return context.Document.RemoveNodeAsync(attribute, SyntaxRemoveOptions.KeepUnbalancedDirectives, ct);
                         }
                     },
                     GetEquivalenceKey(diagnostic));

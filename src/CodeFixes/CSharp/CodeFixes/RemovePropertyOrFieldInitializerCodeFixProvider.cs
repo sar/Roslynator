@@ -24,8 +24,8 @@ namespace Roslynator.CSharp.CodeFixes
             get
             {
                 return ImmutableArray.Create(
-                    CompilerDiagnosticIdentifiers.CannotHaveInstancePropertyOrFieldInitializersInStruct,
-                    CompilerDiagnosticIdentifiers.OnlyAutoImplementedPropertiesCanHaveInitializers);
+                    CompilerDiagnosticIdentifiers.CS0573_CannotHaveInstancePropertyOrFieldInitializersInStruct,
+                    CompilerDiagnosticIdentifiers.CS8050_OnlyAutoImplementedPropertiesCanHaveInitializers);
             }
         }
 
@@ -41,7 +41,7 @@ namespace Roslynator.CSharp.CodeFixes
             if (!TryFindToken(root, context.Span.Start, out SyntaxToken token))
                 return;
 
-            Debug.Assert(token.Kind() == SyntaxKind.IdentifierToken, token.Kind().ToString());
+            SyntaxDebug.Assert(token.Kind() == SyntaxKind.IdentifierToken, token);
 
             if (token.Kind() != SyntaxKind.IdentifierToken)
                 return;
@@ -54,7 +54,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                         CodeAction codeAction = CodeAction.Create(
                             Title,
-                            cancellationToken =>
+                            ct =>
                             {
                                 PropertyDeclarationSyntax newNode = propertyDeclaration
                                     .RemoveNode(initializer)
@@ -62,7 +62,7 @@ namespace Roslynator.CSharp.CodeFixes
                                     .AppendToTrailingTrivia(propertyDeclaration.SemicolonToken.GetAllTrivia())
                                     .WithFormatterAnnotation();
 
-                                return context.Document.ReplaceNodeAsync(propertyDeclaration, newNode, cancellationToken);
+                                return context.Document.ReplaceNodeAsync(propertyDeclaration, newNode, ct);
                             },
                             GetEquivalenceKey(diagnostic, CodeFixIdentifiers.RemovePropertyOrFieldInitializer));
 
@@ -75,15 +75,15 @@ namespace Roslynator.CSharp.CodeFixes
 
                         CodeAction codeAction = CodeAction.Create(
                             Title,
-                            cancellationToken =>
+                            ct =>
                             {
                                 VariableDeclaratorSyntax newNode = variableDeclarator
                                     .RemoveNode(initializer)
                                     .WithFormatterAnnotation();
 
-                                return context.Document.ReplaceNodeAsync(variableDeclarator, newNode, cancellationToken);
+                                return context.Document.ReplaceNodeAsync(variableDeclarator, newNode, ct);
                             },
-                            GetEquivalenceKey(CompilerDiagnosticIdentifiers.CannotHaveInstancePropertyOrFieldInitializersInStruct, CodeFixIdentifiers.RemovePropertyOrFieldInitializer));
+                            GetEquivalenceKey(CompilerDiagnosticIdentifiers.CS0573_CannotHaveInstancePropertyOrFieldInitializersInStruct, CodeFixIdentifiers.RemovePropertyOrFieldInitializer));
 
                         context.RegisterCodeFix(codeAction, diagnostic);
                         break;

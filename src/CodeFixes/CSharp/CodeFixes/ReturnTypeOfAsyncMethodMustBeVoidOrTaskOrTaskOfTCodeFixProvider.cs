@@ -18,7 +18,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.ReturnTypeOfAsyncMethodMustBeVoidOrTaskOrTaskOfT); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS1983_ReturnTypeOfAsyncMethodMustBeVoidOrTaskOrTaskOfT); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -37,7 +37,7 @@ namespace Roslynator.CSharp.CodeFixes
 
             var methodSymbol = (IMethodSymbol)semanticModel.GetDeclaredSymbol(node, context.CancellationToken);
 
-            Debug.Assert(methodSymbol != null, node.Kind().ToString());
+            SyntaxDebug.Assert(methodSymbol != null, node);
 
             ITypeSymbol typeSymbol = methodSymbol.ReturnType;
 
@@ -46,7 +46,7 @@ namespace Roslynator.CSharp.CodeFixes
 
             (bool containsReturnAwait, bool containsAwaitStatement) = AnalyzeAwaitExpressions(node);
 
-            Debug.Assert(containsAwaitStatement || containsReturnAwait, node.ToString());
+            SyntaxDebug.Assert(containsAwaitStatement || containsReturnAwait, node);
 
             if (containsAwaitStatement)
             {

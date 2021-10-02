@@ -26,7 +26,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.OutParameterMustBeAssignedToBeforeControlLeavesCurrentMethod); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS0177_OutParameterMustBeAssignedToBeforeControlLeavesCurrentMethod); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -115,7 +115,7 @@ namespace Roslynator.CSharp.CodeFixes
                 (singleParameter != null)
                     ? $"Assign default value to parameter '{singleParameter.Name}'"
                     : "Assign default value to parameters",
-                cancellationToken => RefactorAsync(context.Document, node, statement, bodyOrExpressionBody, parameters, alwaysAssigned, semanticModel, cancellationToken),
+                ct => RefactorAsync(context.Document, node, statement, bodyOrExpressionBody, parameters, alwaysAssigned, semanticModel, ct),
                 base.GetEquivalenceKey(diagnostic));
 
             context.RegisterCodeFix(codeAction, diagnostic);

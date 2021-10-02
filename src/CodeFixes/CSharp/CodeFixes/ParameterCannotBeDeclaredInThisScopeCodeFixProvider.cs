@@ -18,7 +18,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.LocalOrParameterCannotBeDeclaredInThisScopeBecauseThatNameIsUsedInEnclosingScopeToDefineLocalOrParameter); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS0136_LocalOrParameterCannotBeDeclaredInThisScopeBecauseThatNameIsUsedInEnclosingScopeToDefineLocalOrParameter); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -55,7 +55,7 @@ namespace Roslynator.CSharp.CodeFixes
             {
                 CodeAction codeAction = CodeAction.Create(
                     $"Remove parameter '{parameter.Identifier.ValueText}'",
-                    cancellationToken => context.Document.RemoveNodeAsync(parameter, cancellationToken),
+                    ct => context.Document.RemoveNodeAsync(parameter, ct),
                     GetEquivalenceKey(diagnostic));
 
                 context.RegisterCodeFix(codeAction, diagnostic);

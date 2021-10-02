@@ -19,7 +19,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.SwitchStatementContainsMultipleCasesWithSameLabelValue); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS0152_SwitchStatementContainsMultipleCasesWithSameLabelValue); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -39,7 +39,7 @@ namespace Roslynator.CSharp.CodeFixes
 
             CodeAction codeAction = CodeAction.Create(
                 "Remove duplicate cases",
-                cancellationToken => RefactorAsync(context.Document, switchStatement, cancellationToken),
+                ct => RefactorAsync(context.Document, switchStatement, ct),
                 EquivalenceKey.Create(diagnostic));
 
             context.RegisterCodeFix(codeAction, diagnostic);
@@ -64,7 +64,7 @@ namespace Roslynator.CSharp.CodeFixes
                 foreach (SwitchLabelSyntax label in labels)
                 {
                     if (semanticModel.GetDiagnostic(
-                        CompilerDiagnosticIdentifiers.SwitchStatementContainsMultipleCasesWithSameLabelValue,
+                        CompilerDiagnosticIdentifiers.CS0152_SwitchStatementContainsMultipleCasesWithSameLabelValue,
                         label.Span,
                         cancellationToken) != null)
                     {

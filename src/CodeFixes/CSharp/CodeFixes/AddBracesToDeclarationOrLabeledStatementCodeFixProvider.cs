@@ -18,7 +18,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.EmbeddedStatementCannotBeDeclarationOrLabeledStatement); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS1023_EmbeddedStatementCannotBeDeclarationOrLabeledStatement); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -35,11 +35,11 @@ namespace Roslynator.CSharp.CodeFixes
 
             CodeAction codeAction = CodeAction.Create(
                 "Add braces",
-                cancellationToken =>
+                ct =>
                 {
                     BlockSyntax block = SyntaxFactory.Block(statement).WithFormatterAnnotation();
 
-                    return context.Document.ReplaceNodeAsync(statement, block, cancellationToken);
+                    return context.Document.ReplaceNodeAsync(statement, block, ct);
                 },
                 GetEquivalenceKey(diagnostic));
 

@@ -26,9 +26,9 @@ namespace Roslynator.CSharp.CodeFixes
             get
             {
                 return ImmutableArray.Create(
-                    CompilerDiagnosticIdentifiers.EventInInterfaceCannotHaveAddOrRemoveAccessors,
-                    CompilerDiagnosticIdentifiers.MemberCannotDeclareBodyBecauseItIsMarkedAbstract,
-                    CompilerDiagnosticIdentifiers.InterfaceMembersCannotHaveDefinition);
+                    CompilerDiagnosticIdentifiers.CS0069_EventInInterfaceCannotHaveAddOrRemoveAccessors,
+                    CompilerDiagnosticIdentifiers.CS0500_MemberCannotDeclareBodyBecauseItIsMarkedAbstract,
+                    CompilerDiagnosticIdentifiers.CS0531_InterfaceMembersCannotHaveDefinition);
             }
         }
 
@@ -49,7 +49,7 @@ namespace Roslynator.CSharp.CodeFixes
 
             CodeAction codeAction = CodeAction.Create(
                 (node.IsKind(SyntaxKind.EventDeclaration)) ? "Remove accessor" : "Remove body",
-                cancellationToken => RefactorAsync(context.Document, node, cancellationToken),
+                ct => RefactorAsync(context.Document, node, ct),
                 GetEquivalenceKey(diagnostic));
 
             context.RegisterCodeFix(codeAction, diagnostic);

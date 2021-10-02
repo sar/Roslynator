@@ -22,8 +22,8 @@ namespace Roslynator.CSharp.CodeFixes
             get
             {
                 return ImmutableArray.Create(
-                    CompilerDiagnosticIdentifiers.NotAllCodePathsReturnValue,
-                    CompilerDiagnosticIdentifiers.NotAllCodePathsReturnValueInAnonymousFunction);
+                    CompilerDiagnosticIdentifiers.CS0161_NotAllCodePathsReturnValue,
+                    CompilerDiagnosticIdentifiers.CS1643_NotAllCodePathsReturnValueInAnonymousFunction);
             }
         }
 
@@ -148,7 +148,7 @@ namespace Roslynator.CSharp.CodeFixes
             {
                 CodeAction codeAction = CodeAction.Create(
                     "Add return statement that returns default value",
-                    cancellationToken => RefactorAsync(context.Document, body, typeSymbol, cancellationToken),
+                    ct => RefactorAsync(context.Document, body, typeSymbol, ct),
                     GetEquivalenceKey(diagnostic));
 
                 context.RegisterCodeFix(codeAction, diagnostic);

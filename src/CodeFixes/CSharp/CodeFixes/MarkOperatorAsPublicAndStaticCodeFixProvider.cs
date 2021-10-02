@@ -19,7 +19,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.UserDefinedOperatorMustBeDeclaredStaticAndPublic); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS0558_UserDefinedOperatorMustBeDeclaredStaticAndPublic); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -53,7 +53,7 @@ namespace Roslynator.CSharp.CodeFixes
 
             CodeAction codeAction = CodeAction.Create(
                 title,
-                cancellationToken =>
+                ct =>
                 {
                     SyntaxNode newNode = memberDeclaration;
 
@@ -66,7 +66,7 @@ namespace Roslynator.CSharp.CodeFixes
                     if (!info.IsStatic)
                         newNode = ModifierList.Insert(newNode, SyntaxKind.StaticKeyword);
 
-                    return context.Document.ReplaceNodeAsync(memberDeclaration, newNode, cancellationToken);
+                    return context.Document.ReplaceNodeAsync(memberDeclaration, newNode, ct);
                 },
                 base.GetEquivalenceKey(diagnostic));
 

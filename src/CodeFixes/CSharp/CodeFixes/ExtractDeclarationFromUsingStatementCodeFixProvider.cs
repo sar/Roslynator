@@ -21,7 +21,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.TypeUsedInUsingStatementMustBeImplicitlyConvertibleToIDisposable); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS1674_TypeUsedInUsingStatementMustBeImplicitlyConvertibleToIDisposable); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -41,7 +41,7 @@ namespace Roslynator.CSharp.CodeFixes
 
             CodeAction codeAction = CodeAction.Create(
                 "Extract declaration from using statement",
-                cancellationToken => RefactorAsync(context.Document, usingStatement, cancellationToken),
+                ct => RefactorAsync(context.Document, usingStatement, ct),
                 GetEquivalenceKey(diagnostic));
 
             context.RegisterCodeFix(codeAction, diagnostic);

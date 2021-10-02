@@ -21,7 +21,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.TypeDoesNotContainDefinitionAndNoExtensionMethodCouldBeFound); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS1061_TypeDoesNotContainDefinitionAndNoExtensionMethodCouldBeFound); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -38,7 +38,7 @@ namespace Roslynator.CSharp.CodeFixes
             {
                 case SimpleNameSyntax simpleName:
                     {
-                        Debug.Assert(expression.IsKind(SyntaxKind.IdentifierName, SyntaxKind.GenericName), expression.Kind().ToString());
+                        SyntaxDebug.Assert(expression.IsKind(SyntaxKind.IdentifierName, SyntaxKind.GenericName), expression);
 
                         if (simpleName.IsParentKind(SyntaxKind.SimpleMemberAccessExpression))
                         {
@@ -100,7 +100,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                         CodeAction codeAction = CodeAction.Create(
                             "Remove 'await'",
-                            cancellationToken =>
+                            ct =>
                             {
                                 ExpressionSyntax expression2 = awaitExpression.Expression;
 
@@ -111,7 +111,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                                 ExpressionSyntax newNode = expression2.WithLeadingTrivia(leadingTrivia);
 
-                                return document.ReplaceNodeAsync(awaitExpression, newNode, cancellationToken);
+                                return document.ReplaceNodeAsync(awaitExpression, newNode, ct);
                             },
                             GetEquivalenceKey(diagnostic));
 

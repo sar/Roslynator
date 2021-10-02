@@ -18,7 +18,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.PointersAndFixedSizeBuffersMayOnlyBeUsedInUnsafeContext); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS0214_PointersAndFixedSizeBuffersMayOnlyBeUsedInUnsafeContext); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -32,7 +32,7 @@ namespace Roslynator.CSharp.CodeFixes
             {
                 switch (diagnostic.Id)
                 {
-                    case CompilerDiagnosticIdentifiers.PointersAndFixedSizeBuffersMayOnlyBeUsedInUnsafeContext:
+                    case CompilerDiagnosticIdentifiers.CS0214_PointersAndFixedSizeBuffersMayOnlyBeUsedInUnsafeContext:
                         {
                             var fStatement = false;
                             var fMemberDeclaration = false;
@@ -66,7 +66,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                                     CodeAction codeAction = CodeAction.Create(
                                         "Wrap in unsafe block",
-                                        cancellationToken =>
+                                        ct =>
                                         {
                                             BlockSyntax block = (statement.IsKind(SyntaxKind.Block))
                                                 ? (BlockSyntax)statement
@@ -74,7 +74,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                                             UnsafeStatementSyntax unsafeStatement = SyntaxFactory.UnsafeStatement(block).WithFormatterAnnotation();
 
-                                            return context.Document.ReplaceNodeAsync(statement, unsafeStatement, cancellationToken);
+                                            return context.Document.ReplaceNodeAsync(statement, unsafeStatement, ct);
                                         },
                                         GetEquivalenceKey(diagnostic, CodeFixIdentifiers.WrapInUnsafeStatement));
 

@@ -19,7 +19,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.NewExpressionRequiresParenthesesOrBracketsOrBracesAfterType); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS1526_NewExpressionRequiresParenthesesOrBracketsOrBracesAfterType); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -43,7 +43,7 @@ namespace Roslynator.CSharp.CodeFixes
 
             CodeAction codeAction = CodeAction.Create(
                 "Add argument list",
-                cancellationToken =>
+                ct =>
                 {
                     ObjectCreationExpressionSyntax newNode = objectCreation.Update(
                         objectCreation.NewKeyword,
@@ -51,7 +51,7 @@ namespace Roslynator.CSharp.CodeFixes
                         SyntaxFactory.ArgumentList().WithTrailingTrivia(objectCreation.Type.GetTrailingTrivia()),
                         objectCreation.Initializer);
 
-                    return context.Document.ReplaceNodeAsync(objectCreation, newNode, cancellationToken);
+                    return context.Document.ReplaceNodeAsync(objectCreation, newNode, ct);
                 },
                 GetEquivalenceKey(diagnostic));
 

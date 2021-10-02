@@ -19,7 +19,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.TypeInInterfaceListIsNotInterface); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS0527_TypeInInterfaceListIsNotInterface); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -46,7 +46,7 @@ namespace Roslynator.CSharp.CodeFixes
 
             CodeAction codeAction = CodeAction.Create(
                 "Replace 'struct' with 'class'",
-                cancellationToken => context.Document.ReplaceNodeAsync(structDeclaration, ClassDeclaration(structDeclaration), cancellationToken),
+                ct => context.Document.ReplaceNodeAsync(structDeclaration, ClassDeclaration(structDeclaration), ct),
                 GetEquivalenceKey(diagnostic));
 
             context.RegisterCodeFix(codeAction, diagnostic);

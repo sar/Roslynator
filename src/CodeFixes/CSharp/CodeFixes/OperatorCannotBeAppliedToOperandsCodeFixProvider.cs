@@ -18,7 +18,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.OperatorCannotBeAppliedToOperands); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS0019_OperatorCannotBeAppliedToOperands); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -52,7 +52,7 @@ namespace Roslynator.CSharp.CodeFixes
             {
                 CodeAction codeAction = CodeAction.Create(
                     AddComparisonWithBooleanLiteralRefactoring.GetTitle(expression),
-                    cancellationToken => AddComparisonWithBooleanLiteralRefactoring.RefactorAsync(context.Document, expression, cancellationToken),
+                    ct => AddComparisonWithBooleanLiteralRefactoring.RefactorAsync(context.Document, expression, ct),
                     GetEquivalenceKey(diagnostic));
 
                 context.RegisterCodeFix(codeAction, diagnostic);

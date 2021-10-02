@@ -19,7 +19,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.AsOperatorMustBeUsedWithReferenceTypeOrNullableType); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS0077_AsOperatorMustBeUsedWithReferenceTypeOrNullableType); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -41,7 +41,7 @@ namespace Roslynator.CSharp.CodeFixes
 
             CodeAction codeAction = CodeAction.Create(
                 ReplaceAsWithCastRefactoring.Title,
-                cancellationToken => ReplaceAsWithCastRefactoring.RefactorAsync(context.Document, binaryExpression, cancellationToken),
+                ct => ReplaceAsWithCastRefactoring.RefactorAsync(context.Document, binaryExpression, ct),
                 GetEquivalenceKey(diagnostic));
 
             context.RegisterCodeFix(codeAction, diagnostic);

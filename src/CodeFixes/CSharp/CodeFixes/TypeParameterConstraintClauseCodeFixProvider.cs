@@ -21,8 +21,8 @@ namespace Roslynator.CSharp.CodeFixes
             get
             {
                 return ImmutableArray.Create(
-                    CompilerDiagnosticIdentifiers.ConstraintsAreNotAllowedOnNonGenericDeclarations,
-                    CompilerDiagnosticIdentifiers.ConstraintClauseHasAlreadyBeenSpecified);
+                    CompilerDiagnosticIdentifiers.CS0080_ConstraintsAreNotAllowedOnNonGenericDeclarations,
+                    CompilerDiagnosticIdentifiers.CS0409_ConstraintClauseHasAlreadyBeenSpecified);
             }
         }
 
@@ -37,7 +37,7 @@ namespace Roslynator.CSharp.CodeFixes
             {
                 switch (diagnostic.Id)
                 {
-                    case CompilerDiagnosticIdentifiers.ConstraintsAreNotAllowedOnNonGenericDeclarations:
+                    case CompilerDiagnosticIdentifiers.CS0080_ConstraintsAreNotAllowedOnNonGenericDeclarations:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.RemoveConstraintClauses))
                                 break;
@@ -49,18 +49,18 @@ namespace Roslynator.CSharp.CodeFixes
 
                             CodeAction codeAction = CodeAction.Create(
                                 "Remove constraints",
-                                cancellationToken =>
+                                ct =>
                                 {
                                     GenericInfo newGenericInfo = genericInfo.RemoveAllConstraintClauses();
 
-                                    return context.Document.ReplaceNodeAsync(genericInfo.Node, newGenericInfo.Node, cancellationToken);
+                                    return context.Document.ReplaceNodeAsync(genericInfo.Node, newGenericInfo.Node, ct);
                                 },
                                 GetEquivalenceKey(diagnostic));
 
                             context.RegisterCodeFix(codeAction, diagnostic);
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.ConstraintClauseHasAlreadyBeenSpecified:
+                    case CompilerDiagnosticIdentifiers.CS0409_ConstraintClauseHasAlreadyBeenSpecified:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.CombineConstraintClauses))
                                 break;
@@ -78,7 +78,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                             CodeAction codeAction = CodeAction.Create(
                                 $"Combine constraints for '{name}'",
-                                cancellationToken =>
+                                ct =>
                                 {
                                     TypeParameterConstraintClauseSyntax newConstraintClause = constraintClause2.WithConstraints(constraintClause2.Constraints.AddRange(constraintClause.Constraints));
 
@@ -88,7 +88,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                                     GenericInfo newGenericInfo = genericInfo.WithConstraintClauses(newConstraintClauses);
 
-                                    return context.Document.ReplaceNodeAsync(genericInfo.Node, newGenericInfo.Node, cancellationToken);
+                                    return context.Document.ReplaceNodeAsync(genericInfo.Node, newGenericInfo.Node, ct);
                                 },
                                 GetEquivalenceKey(diagnostic));
 

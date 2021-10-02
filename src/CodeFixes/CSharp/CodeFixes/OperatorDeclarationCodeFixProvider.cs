@@ -18,7 +18,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.OperatorRequiresMatchingOperatorToAlsoBeDefined); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS0216_OperatorRequiresMatchingOperatorToAlsoBeDefined); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -50,11 +50,11 @@ namespace Roslynator.CSharp.CodeFixes
 
             CodeAction codeAction = CodeAction.Create(
                 $"Generate {newToken} operator",
-                cancellationToken =>
+                ct =>
                 {
                     OperatorDeclarationSyntax newNode = operatorDeclaration.WithOperatorToken(newToken);
 
-                    return context.Document.InsertNodeAfterAsync(operatorDeclaration, newNode, cancellationToken);
+                    return context.Document.InsertNodeAfterAsync(operatorDeclaration, newNode, ct);
                 },
                 EquivalenceKey.Create(diagnostic));
 

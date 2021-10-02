@@ -20,8 +20,8 @@ namespace Roslynator.CSharp.CodeFixes
             get
             {
                 return ImmutableArray.Create(
-                    CompilerDiagnosticIdentifiers.AttributeIsNotValidOnThisDeclarationType,
-                    CompilerDiagnosticIdentifiers.AttributeIsOnlyValidOnMethodsOrAttributeClasses);
+                    CompilerDiagnosticIdentifiers.CS0592_AttributeIsNotValidOnThisDeclarationType,
+                    CompilerDiagnosticIdentifiers.CS1689_AttributeIsOnlyValidOnMethodsOrAttributeClasses);
             }
         }
 
@@ -39,7 +39,7 @@ namespace Roslynator.CSharp.CodeFixes
 
             CodeAction codeAction = CodeAction.Create(
                 $"Remove attribute '{attribute.Name}'",
-                cancellationToken =>
+                ct =>
                 {
                     var attributeList = (AttributeListSyntax)attribute.Parent;
 
@@ -47,11 +47,11 @@ namespace Roslynator.CSharp.CodeFixes
 
                     if (attributes.Count == 1)
                     {
-                        return context.Document.RemoveNodeAsync(attributeList, cancellationToken);
+                        return context.Document.RemoveNodeAsync(attributeList, ct);
                     }
                     else
                     {
-                        return context.Document.RemoveNodeAsync(attribute, cancellationToken);
+                        return context.Document.RemoveNodeAsync(attribute, ct);
                     }
                 },
                 GetEquivalenceKey(diagnostic));

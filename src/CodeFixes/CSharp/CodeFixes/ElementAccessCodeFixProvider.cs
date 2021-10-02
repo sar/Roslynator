@@ -19,7 +19,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CannotApplyIndexingToExpression); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS0021_CannotApplyIndexingToExpression); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -53,7 +53,7 @@ namespace Roslynator.CSharp.CodeFixes
 
             CodeAction codeAction = CodeAction.Create(
                 "Replace [] with ()",
-                cancellationToken => context.Document.ReplaceNodeAsync(elementAccess, invocationExpression, cancellationToken),
+                ct => context.Document.ReplaceNodeAsync(elementAccess, invocationExpression, ct),
                 GetEquivalenceKey(diagnostic));
 
             context.RegisterCodeFix(codeAction, diagnostic);

@@ -22,9 +22,9 @@ namespace Roslynator.CSharp.CodeFixes
             get
             {
                 return ImmutableArray.Create(
-                    CompilerDiagnosticIdentifiers.BaseClassMustComeBeforeAnyInterface,
-                    CompilerDiagnosticIdentifiers.StaticClassCannotDeriveFromType,
-                    CompilerDiagnosticIdentifiers.StaticClassCannotImplementInterfaces);
+                    CompilerDiagnosticIdentifiers.CS1722_BaseClassMustComeBeforeAnyInterface,
+                    CompilerDiagnosticIdentifiers.CS0713_StaticClassCannotDeriveFromType,
+                    CompilerDiagnosticIdentifiers.CS0714_StaticClassCannotImplementInterfaces);
             }
         }
 
@@ -42,7 +42,7 @@ namespace Roslynator.CSharp.CodeFixes
             {
                 switch (diagnostic.Id)
                 {
-                    case CompilerDiagnosticIdentifiers.BaseClassMustComeBeforeAnyInterface:
+                    case CompilerDiagnosticIdentifiers.CS1722_BaseClassMustComeBeforeAnyInterface:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.MoveBaseClassBeforeAnyInterface))
                                 return;
@@ -55,7 +55,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                                 CodeAction codeAction = CodeAction.Create(
                                     $"Move '{baseType.Type}' before any interface",
-                                    cancellationToken =>
+                                    ct =>
                                     {
                                         BaseTypeSyntax firstType = types[0];
 
@@ -65,7 +65,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                                         BaseListSyntax newBaseList = baseList.WithTypes(newTypes);
 
-                                        return context.Document.ReplaceNodeAsync(baseList, newBaseList, cancellationToken);
+                                        return context.Document.ReplaceNodeAsync(baseList, newBaseList, ct);
                                     },
                                     GetEquivalenceKey(diagnostic));
 
@@ -74,8 +74,8 @@ namespace Roslynator.CSharp.CodeFixes
 
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.StaticClassCannotDeriveFromType:
-                    case CompilerDiagnosticIdentifiers.StaticClassCannotImplementInterfaces:
+                    case CompilerDiagnosticIdentifiers.CS0713_StaticClassCannotDeriveFromType:
+                    case CompilerDiagnosticIdentifiers.CS0714_StaticClassCannotImplementInterfaces:
                         {
                             if (!(baseList.Parent is ClassDeclarationSyntax classDeclaration))
                                 break;
@@ -95,7 +95,7 @@ namespace Roslynator.CSharp.CodeFixes
                             {
                                 CodeAction codeAction = CodeAction.Create(
                                     "Remove base list",
-                                    cancellationToken =>
+                                    ct =>
                                     {
                                         SyntaxToken token = baseList.GetFirstToken().GetPreviousToken();
 
@@ -107,7 +107,7 @@ namespace Roslynator.CSharp.CodeFixes
                                             .ReplaceToken(token, token.WithTrailingTrivia(trivia))
                                             .WithBaseList(null);
 
-                                        return context.Document.ReplaceNodeAsync(classDeclaration, newNode, cancellationToken);
+                                        return context.Document.ReplaceNodeAsync(classDeclaration, newNode, ct);
                                     },
                                     base.GetEquivalenceKey(diagnostic, CodeFixIdentifiers.RemoveBaseList));
 

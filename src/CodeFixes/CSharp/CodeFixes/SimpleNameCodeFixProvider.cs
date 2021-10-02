@@ -23,9 +23,9 @@ namespace Roslynator.CSharp.CodeFixes
             get
             {
                 return ImmutableArray.Create(
-                    CompilerDiagnosticIdentifiers.CannotConvertMethodGroupToNonDelegateType,
-                    CompilerDiagnosticIdentifiers.TypeOrNamespaceNameCouldNotBeFound,
-                    CompilerDiagnosticIdentifiers.NameIsNotValidInGivenContext);
+                    CompilerDiagnosticIdentifiers.CS0428_CannotConvertMethodGroupToNonDelegateType,
+                    CompilerDiagnosticIdentifiers.CS0246_TypeOrNamespaceNameCouldNotBeFound,
+                    CompilerDiagnosticIdentifiers.CS0119_NameIsNotValidInGivenContext);
             }
         }
 
@@ -40,8 +40,8 @@ namespace Roslynator.CSharp.CodeFixes
             Diagnostic diagnostic = context.Diagnostics[0];
             string diagnosticId = diagnostic.Id;
 
-            if (diagnosticId == CompilerDiagnosticIdentifiers.CannotConvertMethodGroupToNonDelegateType
-                || diagnosticId == CompilerDiagnosticIdentifiers.NameIsNotValidInGivenContext)
+            if (diagnosticId == CompilerDiagnosticIdentifiers.CS0428_CannotConvertMethodGroupToNonDelegateType
+                || diagnosticId == CompilerDiagnosticIdentifiers.CS0119_NameIsNotValidInGivenContext)
             {
                 if (!Settings.IsEnabled(diagnosticId, CodeFixIdentifiers.AddArgumentList))
                     return;
@@ -53,19 +53,19 @@ namespace Roslynator.CSharp.CodeFixes
 
                 CodeAction codeAction = CodeAction.Create(
                     "Add argument list",
-                    cancellationToken =>
+                    ct =>
                     {
                         InvocationExpressionSyntax invocationExpression = InvocationExpression(
                             memberAccess.WithoutTrailingTrivia(),
                             ArgumentList().WithTrailingTrivia(memberAccess.GetTrailingTrivia()));
 
-                        return document.ReplaceNodeAsync(memberAccess, invocationExpression, cancellationToken);
+                        return document.ReplaceNodeAsync(memberAccess, invocationExpression, ct);
                     },
                     GetEquivalenceKey(diagnostic));
 
                 context.RegisterCodeFix(codeAction, diagnostic);
             }
-            else if (diagnosticId == CompilerDiagnosticIdentifiers.TypeOrNamespaceNameCouldNotBeFound)
+            else if (diagnosticId == CompilerDiagnosticIdentifiers.CS0246_TypeOrNamespaceNameCouldNotBeFound)
             {
                 if (Settings.IsEnabled(diagnosticId, CodeFixIdentifiers.ChangeArrayType)
                     && (simpleName.Parent is ArrayTypeSyntax arrayType)
@@ -88,7 +88,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                             CodeAction codeAction = CodeAction.Create(
                                 $"Change element type to '{SymbolDisplay.ToMinimalDisplayString(typeSymbol, semanticModel, simpleName.SpanStart, SymbolDisplayFormats.DisplayName)}'",
-                                cancellationToken => document.ReplaceNodeAsync(simpleName, newType, cancellationToken),
+                                ct => document.ReplaceNodeAsync(simpleName, newType, ct),
                                 GetEquivalenceKey(diagnostic));
 
                             context.RegisterCodeFix(codeAction, diagnostic);

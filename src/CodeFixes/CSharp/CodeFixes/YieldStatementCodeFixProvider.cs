@@ -18,7 +18,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.YieldStatementCannotBeUsedInsideAnonymousMethodOrLambdaExpression); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS1621_YieldStatementCannotBeUsedInsideAnonymousMethodOrLambdaExpression); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -35,7 +35,7 @@ namespace Roslynator.CSharp.CodeFixes
 
             CodeAction codeAction = CodeAction.Create(
                 "Remove 'yield'",
-                cancellationToken =>
+                ct =>
                 {
                     SyntaxToken yieldKeyword = yieldStatement.YieldKeyword;
                     SyntaxToken returnKeyword = yieldStatement.ReturnOrBreakKeyword;
@@ -49,7 +49,7 @@ namespace Roslynator.CSharp.CodeFixes
                         yieldStatement.Expression,
                         yieldStatement.SemicolonToken);
 
-                    return context.Document.ReplaceNodeAsync(yieldStatement, newNode, cancellationToken);
+                    return context.Document.ReplaceNodeAsync(yieldStatement, newNode, ct);
                 },
                 GetEquivalenceKey(diagnostic));
 

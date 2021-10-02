@@ -26,10 +26,10 @@ namespace Roslynator.CSharp.CodeFixes
             get
             {
                 return ImmutableArray.Create(
-                    CompilerDiagnosticIdentifiers.ArgumentMustBePassedWithRefOrOutKeyword,
-                    CompilerDiagnosticIdentifiers.ArgumentShouldNotBePassedWithRefOrOutKeyword,
-                    CompilerDiagnosticIdentifiers.CannotConvertArgumentType,
-                    CompilerDiagnosticIdentifiers.ReadOnlyFieldCannotBePassedAsRefOrOutValue);
+                    CompilerDiagnosticIdentifiers.CS1620_ArgumentMustBePassedWithRefOrOutKeyword,
+                    CompilerDiagnosticIdentifiers.CS1615_ArgumentShouldNotBePassedWithRefOrOutKeyword,
+                    CompilerDiagnosticIdentifiers.CS1503_CannotConvertArgumentType,
+                    CompilerDiagnosticIdentifiers.CS0192_ReadOnlyFieldCannotBePassedAsRefOrOutValue);
             }
         }
 
@@ -44,7 +44,7 @@ namespace Roslynator.CSharp.CodeFixes
             {
                 switch (diagnostic.Id)
                 {
-                    case CompilerDiagnosticIdentifiers.ArgumentMustBePassedWithRefOrOutKeyword:
+                    case CompilerDiagnosticIdentifiers.CS1620_ArgumentMustBePassedWithRefOrOutKeyword:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.AddOutModifierToArgument))
                                 return;
@@ -73,41 +73,41 @@ namespace Roslynator.CSharp.CodeFixes
 
                             CodeAction codeAction = CodeAction.Create(
                                 $"Add '{SyntaxFacts.GetText(refOrOutKeyword.Kind())}' modifier",
-                                cancellationToken =>
+                                ct =>
                                 {
                                     ArgumentSyntax newArgument = argument
                                         .WithRefOrOutKeyword(refOrOutKeyword)
                                         .WithFormatterAnnotation();
 
-                                    return context.Document.ReplaceNodeAsync(argument, newArgument, cancellationToken);
+                                    return context.Document.ReplaceNodeAsync(argument, newArgument, ct);
                                 },
                                 GetEquivalenceKey(diagnostic));
 
                             context.RegisterCodeFix(codeAction, diagnostic);
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.ArgumentShouldNotBePassedWithRefOrOutKeyword:
+                    case CompilerDiagnosticIdentifiers.CS1615_ArgumentShouldNotBePassedWithRefOrOutKeyword:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.RemoveRefModifier))
                                 return;
 
                             CodeAction codeAction = CodeAction.Create(
                                 "Remove 'ref' modifier",
-                                cancellationToken =>
+                                ct =>
                                 {
                                     ArgumentSyntax newArgument = argument
                                         .WithRefOrOutKeyword(default(SyntaxToken))
                                         .PrependToLeadingTrivia(argument.RefOrOutKeyword.GetAllTrivia())
                                         .WithFormatterAnnotation();
 
-                                    return context.Document.ReplaceNodeAsync(argument, newArgument, cancellationToken);
+                                    return context.Document.ReplaceNodeAsync(argument, newArgument, ct);
                                 },
                                 GetEquivalenceKey(diagnostic));
 
                             context.RegisterCodeFix(codeAction, diagnostic);
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.CannotConvertArgumentType:
+                    case CompilerDiagnosticIdentifiers.CS1503_CannotConvertArgumentType:
                         {
                             if (Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.ReplaceNullLiteralExpressionWithDefaultValue))
                             {
@@ -160,11 +160,11 @@ namespace Roslynator.CSharp.CodeFixes
                                     {
                                         CodeAction codeAction = CodeAction.Create(
                                             "Add argument list",
-                                            cancellationToken =>
+                                            ct =>
                                             {
                                                 ArgumentSyntax newNode = argument.WithExpression(invocationExpression);
 
-                                                return context.Document.ReplaceNodeAsync(argument, newNode, cancellationToken);
+                                                return context.Document.ReplaceNodeAsync(argument, newNode, ct);
                                             },
                                             GetEquivalenceKey(diagnostic, CodeFixIdentifiers.AddArgumentList));
 
@@ -194,7 +194,7 @@ namespace Roslynator.CSharp.CodeFixes
                                             {
                                                 CodeAction codeAction = CodeAction.Create(
                                                     "Create singleton array",
-                                                    cancellationToken => CreateSingletonArrayRefactoring.RefactorAsync(context.Document, expression, arrayType.ElementType, semanticModel, cancellationToken),
+                                                    ct => CreateSingletonArrayRefactoring.RefactorAsync(context.Document, expression, arrayType.ElementType, semanticModel, ct),
                                                     GetEquivalenceKey(diagnostic, CodeFixIdentifiers.CreateSingletonArray));
 
                                                 context.RegisterCodeFix(codeAction, diagnostic);
@@ -207,7 +207,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.ReadOnlyFieldCannotBePassedAsRefOrOutValue:
+                    case CompilerDiagnosticIdentifiers.CS0192_ReadOnlyFieldCannotBePassedAsRefOrOutValue:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.MakeFieldWritable))
                                 return;

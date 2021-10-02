@@ -25,15 +25,15 @@ namespace Roslynator.CSharp.CodeFixes
             get
             {
                 return ImmutableArray.Create(
-                    CompilerDiagnosticIdentifiers.OperatorCannotBeAppliedToOperand,
-                    CompilerDiagnosticIdentifiers.PartialModifierCanOnlyAppearImmediatelyBeforeClassStructInterfaceOrVoid,
-                    CompilerDiagnosticIdentifiers.ValueCannotBeUsedAsDefaultParameter,
-                    CompilerDiagnosticIdentifiers.ObjectOfTypeConvertibleToTypeIsRequired,
-                    CompilerDiagnosticIdentifiers.TypeExpected,
-                    CompilerDiagnosticIdentifiers.SemicolonAfterMethodOrAccessorBlockIsNotValid,
-                    CompilerDiagnosticIdentifiers.CannotConvertType,
-                    CompilerDiagnosticIdentifiers.OptionalParametersMustAppearAfterAllRequiredParameters,
-                    CompilerDiagnosticIdentifiers.AnnotationForNullableReferenceTypesShouldOnlyBeUsedWithinNullableAnnotationsContext);
+                    CompilerDiagnosticIdentifiers.CS0023_OperatorCannotBeAppliedToOperand,
+                    CompilerDiagnosticIdentifiers.CS0267_PartialModifierCanOnlyAppearImmediatelyBeforeClassStructInterfaceOrVoid,
+                    CompilerDiagnosticIdentifiers.CS1750_ValueCannotBeUsedAsDefaultParameter,
+                    CompilerDiagnosticIdentifiers.CS0126_ObjectOfTypeConvertibleToTypeIsRequired,
+                    CompilerDiagnosticIdentifiers.CS1031_TypeExpected,
+                    CompilerDiagnosticIdentifiers.CS1597_SemicolonAfterMethodOrAccessorBlockIsNotValid,
+                    CompilerDiagnosticIdentifiers.CS0030_CannotConvertType,
+                    CompilerDiagnosticIdentifiers.CS1737_OptionalParametersMustAppearAfterAllRequiredParameters,
+                    CompilerDiagnosticIdentifiers.CS8632_AnnotationForNullableReferenceTypesShouldOnlyBeUsedWithinNullableAnnotationsContext);
             }
         }
 
@@ -50,7 +50,7 @@ namespace Roslynator.CSharp.CodeFixes
             {
                 switch (diagnostic.Id)
                 {
-                    case CompilerDiagnosticIdentifiers.OperatorCannotBeAppliedToOperand:
+                    case CompilerDiagnosticIdentifiers.CS0023_OperatorCannotBeAppliedToOperand:
                         {
                             if (kind == SyntaxKind.QuestionToken
                                 && token.Parent is ConditionalAccessExpressionSyntax conditionalAccess)
@@ -86,7 +86,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                                             CodeAction codeAction = CodeAction.Create(
                                                 "Add argument list",
-                                                cancellationToken => context.Document.ReplaceNodeAsync(conditionalAccess, newNode, cancellationToken),
+                                                ct => context.Document.ReplaceNodeAsync(conditionalAccess, newNode, ct),
                                                 GetEquivalenceKey(diagnostic));
 
                                             context.RegisterCodeFix(codeAction, diagnostic);
@@ -97,7 +97,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.PartialModifierCanOnlyAppearImmediatelyBeforeClassStructInterfaceOrVoid:
+                    case CompilerDiagnosticIdentifiers.CS0267_PartialModifierCanOnlyAppearImmediatelyBeforeClassStructInterfaceOrVoid:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.OrderModifiers))
                                 break;
@@ -105,7 +105,7 @@ namespace Roslynator.CSharp.CodeFixes
                             ModifiersCodeFixRegistrator.MoveModifier(context, diagnostic, token.Parent, token);
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.ValueCannotBeUsedAsDefaultParameter:
+                    case CompilerDiagnosticIdentifiers.CS1750_ValueCannotBeUsedAsDefaultParameter:
                         {
                             if (!(token.Parent is ParameterSyntax parameter))
                                 break;
@@ -141,7 +141,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.ObjectOfTypeConvertibleToTypeIsRequired:
+                    case CompilerDiagnosticIdentifiers.CS0126_ObjectOfTypeConvertibleToTypeIsRequired:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.ReturnDefaultValue))
                                 break;
@@ -200,7 +200,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                             CodeAction codeAction = CodeAction.Create(
                                 "Return default value",
-                                cancellationToken =>
+                                ct =>
                                 {
                                     ExpressionSyntax expression = typeSymbol.GetDefaultValueSyntax(context.Document.GetDefaultSyntaxOptions());
 
@@ -212,14 +212,14 @@ namespace Roslynator.CSharp.CodeFixes
 
                                     ReturnStatementSyntax newNode = returnStatement.WithExpression(expression);
 
-                                    return context.Document.ReplaceNodeAsync(returnStatement, newNode, cancellationToken);
+                                    return context.Document.ReplaceNodeAsync(returnStatement, newNode, ct);
                                 },
                                 GetEquivalenceKey(diagnostic));
 
                             context.RegisterCodeFix(codeAction, diagnostic);
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.TypeExpected:
+                    case CompilerDiagnosticIdentifiers.CS1031_TypeExpected:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.AddMissingType))
                                 break;
@@ -260,7 +260,7 @@ namespace Roslynator.CSharp.CodeFixes
                             context.RegisterCodeFix(codeAction, diagnostic);
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.SemicolonAfterMethodOrAccessorBlockIsNotValid:
+                    case CompilerDiagnosticIdentifiers.CS1597_SemicolonAfterMethodOrAccessorBlockIsNotValid:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.RemoveSemicolon))
                                 break;
@@ -279,7 +279,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                                         CodeAction codeAction = CodeAction.Create(
                                             "Remove semicolon",
-                                            cancellationToken =>
+                                            ct =>
                                             {
                                                 SyntaxTriviaList trivia = body
                                                     .GetTrailingTrivia()
@@ -291,7 +291,7 @@ namespace Roslynator.CSharp.CodeFixes
                                                     .WithBody(body.WithTrailingTrivia(trivia))
                                                     .WithSemicolonToken(default(SyntaxToken));
 
-                                                return context.Document.ReplaceNodeAsync(methodDeclaration, newNode, cancellationToken);
+                                                return context.Document.ReplaceNodeAsync(methodDeclaration, newNode, ct);
                                             },
                                             GetEquivalenceKey(diagnostic));
 
@@ -307,7 +307,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                                         CodeAction codeAction = CodeAction.Create(
                                             "Remove semicolon",
-                                            cancellationToken =>
+                                            ct =>
                                             {
                                                 SyntaxTriviaList trivia = accessorList
                                                     .GetTrailingTrivia()
@@ -319,7 +319,7 @@ namespace Roslynator.CSharp.CodeFixes
                                                     .WithAccessorList(accessorList.WithTrailingTrivia(trivia))
                                                     .WithSemicolonToken(default(SyntaxToken));
 
-                                                return context.Document.ReplaceNodeAsync(propertyDeclaration, newNode, cancellationToken);
+                                                return context.Document.ReplaceNodeAsync(propertyDeclaration, newNode, ct);
                                             },
                                             GetEquivalenceKey(diagnostic));
 
@@ -335,7 +335,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                                         CodeAction codeAction = CodeAction.Create(
                                             "Remove semicolon",
-                                            cancellationToken =>
+                                            ct =>
                                             {
                                                 SyntaxTriviaList trivia = body
                                                     .GetTrailingTrivia()
@@ -347,7 +347,7 @@ namespace Roslynator.CSharp.CodeFixes
                                                     .WithBody(body.WithTrailingTrivia(trivia))
                                                     .WithSemicolonToken(default(SyntaxToken));
 
-                                                return context.Document.ReplaceNodeAsync(accessorDeclaration, newNode, cancellationToken);
+                                                return context.Document.ReplaceNodeAsync(accessorDeclaration, newNode, ct);
                                             },
                                             GetEquivalenceKey(diagnostic));
 
@@ -358,7 +358,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.CannotConvertType:
+                    case CompilerDiagnosticIdentifiers.CS0030_CannotConvertType:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.ChangeForEachType))
                                 break;
@@ -381,7 +381,7 @@ namespace Roslynator.CSharp.CodeFixes
                             CodeFixRegistrator.ChangeTypeToVar(context, diagnostic, forEachStatement.Type, CodeFixIdentifiers.ChangeTypeToVar);
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.OptionalParametersMustAppearAfterAllRequiredParameters:
+                    case CompilerDiagnosticIdentifiers.CS1737_OptionalParametersMustAppearAfterAllRequiredParameters:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.AddDefaultValueToParameter))
                                 break;
@@ -418,7 +418,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                             CodeAction codeAction = CodeAction.Create(
                                 "Add default value",
-                                cancellationToken =>
+                                ct =>
                                 {
                                     ExpressionSyntax defaultValue = typeSymbol.GetDefaultValueSyntax(context.Document.GetDefaultSyntaxOptions());
 
@@ -427,14 +427,14 @@ namespace Roslynator.CSharp.CodeFixes
                                         .WithoutTrailingTrivia()
                                         .WithFormatterAnnotation();
 
-                                    return context.Document.ReplaceNodeAsync(parameter, newParameter, cancellationToken);
+                                    return context.Document.ReplaceNodeAsync(parameter, newParameter, ct);
                                 },
                                 GetEquivalenceKey(diagnostic));
 
                             context.RegisterCodeFix(codeAction, diagnostic);
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.AnnotationForNullableReferenceTypesShouldOnlyBeUsedWithinNullableAnnotationsContext:
+                    case CompilerDiagnosticIdentifiers.CS8632_AnnotationForNullableReferenceTypesShouldOnlyBeUsedWithinNullableAnnotationsContext:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.RemoveAnnotationForNullableReferenceTypes))
                                 break;

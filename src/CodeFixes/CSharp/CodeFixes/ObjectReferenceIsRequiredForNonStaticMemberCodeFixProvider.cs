@@ -18,7 +18,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.ObjectReferenceIsRequiredForNonStaticMember); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS0120_ObjectReferenceIsRequiredForNonStaticMember); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -41,7 +41,7 @@ namespace Roslynator.CSharp.CodeFixes
                     if (symbol?.IsErrorType() != false)
                         return;
 
-                    Debug.Assert(SyntaxInfo.ModifierListInfo(memberDeclaration).IsStatic, memberDeclaration.ToString());
+                    SyntaxDebug.Assert(SyntaxInfo.ModifierListInfo(memberDeclaration).IsStatic, memberDeclaration);
 
                     if (SyntaxInfo.ModifierListInfo(memberDeclaration).IsStatic)
                     {
@@ -95,7 +95,7 @@ namespace Roslynator.CSharp.CodeFixes
             if (syntax.Kind() == SyntaxKind.VariableDeclarator)
                 syntax = syntax.Parent?.Parent;
 
-            Debug.Assert(syntax.IsKind(SyntaxKind.EventDeclaration, SyntaxKind.EventFieldDeclaration, SyntaxKind.FieldDeclaration, SyntaxKind.MethodDeclaration, SyntaxKind.PropertyDeclaration), syntax.ToString());
+            SyntaxDebug.Assert(syntax.IsKind(SyntaxKind.EventDeclaration, SyntaxKind.EventFieldDeclaration, SyntaxKind.FieldDeclaration, SyntaxKind.MethodDeclaration, SyntaxKind.PropertyDeclaration), syntax);
 
             if (!(syntax is MemberDeclarationSyntax memberDeclaration))
                 return;

@@ -22,9 +22,9 @@ namespace Roslynator.CSharp.CodeFixes
             get
             {
                 return ImmutableArray.Create(
-                    CompilerDiagnosticIdentifiers.CannotReturnValueFromIterator,
-                    CompilerDiagnosticIdentifiers.SinceMethodReturnsVoidReturnKeywordMustNotBeFollowedByObjectExpression,
-                    CompilerDiagnosticIdentifiers.SinceMethodIsAsyncMethodThatReturnsTaskReturnKeywordMustNotBeFollowedByObjectExpression);
+                    CompilerDiagnosticIdentifiers.CS1622_CannotReturnValueFromIterator,
+                    CompilerDiagnosticIdentifiers.CS0127_SinceMethodReturnsVoidReturnKeywordMustNotBeFollowedByObjectExpression,
+                    CompilerDiagnosticIdentifiers.CS1997_SinceMethodIsAsyncMethodThatReturnsTaskReturnKeywordMustNotBeFollowedByObjectExpression);
             }
         }
 
@@ -39,7 +39,7 @@ namespace Roslynator.CSharp.CodeFixes
             {
                 switch (diagnostic.Id)
                 {
-                    case CompilerDiagnosticIdentifiers.CannotReturnValueFromIterator:
+                    case CompilerDiagnosticIdentifiers.CS1622_CannotReturnValueFromIterator:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.UseYieldReturnInsteadOfReturn))
                                 break;
@@ -96,7 +96,7 @@ namespace Roslynator.CSharp.CodeFixes
                                     {
                                         CodeAction codeAction = CodeAction.Create(
                                             "Use yield return instead of return",
-                                            cancellationToken => UseYieldReturnInsteadOfReturnRefactoring.RefactorAsync(context.Document, returnStatement, replacementKind, semanticModel, cancellationToken),
+                                            ct => UseYieldReturnInsteadOfReturnRefactoring.RefactorAsync(context.Document, returnStatement, replacementKind, semanticModel, ct),
                                             GetEquivalenceKey(diagnostic));
 
                                         context.RegisterCodeFix(codeAction, diagnostic);
@@ -106,8 +106,8 @@ namespace Roslynator.CSharp.CodeFixes
 
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.SinceMethodReturnsVoidReturnKeywordMustNotBeFollowedByObjectExpression:
-                    case CompilerDiagnosticIdentifiers.SinceMethodIsAsyncMethodThatReturnsTaskReturnKeywordMustNotBeFollowedByObjectExpression:
+                    case CompilerDiagnosticIdentifiers.CS0127_SinceMethodReturnsVoidReturnKeywordMustNotBeFollowedByObjectExpression:
+                    case CompilerDiagnosticIdentifiers.CS1997_SinceMethodIsAsyncMethodThatReturnsTaskReturnKeywordMustNotBeFollowedByObjectExpression:
                         {
                             SemanticModel semanticModel = await context.GetSemanticModelAsync().ConfigureAwait(false);
 
@@ -129,13 +129,13 @@ namespace Roslynator.CSharp.CodeFixes
                                     {
                                         CodeAction codeAction = CodeAction.Create(
                                             "Remove return expression",
-                                            cancellationToken =>
+                                            ct =>
                                             {
                                                 ReturnStatementSyntax newNode = returnStatement
                                                     .WithExpression(null)
                                                     .WithFormatterAnnotation();
 
-                                                return context.Document.ReplaceNodeAsync(returnStatement, newNode, cancellationToken);
+                                                return context.Document.ReplaceNodeAsync(returnStatement, newNode, ct);
                                             },
                                             GetEquivalenceKey(diagnostic, CodeFixIdentifiers.RemoveReturnExpression));
 
@@ -159,7 +159,7 @@ namespace Roslynator.CSharp.CodeFixes
                                 {
                                     CodeAction codeAction = CodeAction.Create(
                                         "Remove 'return'",
-                                        cancellationToken =>
+                                        ct =>
                                         {
                                             SyntaxTriviaList leadingTrivia = returnStatement
                                                 .GetLeadingTrivia()
@@ -170,7 +170,7 @@ namespace Roslynator.CSharp.CodeFixes
                                                 expression.WithLeadingTrivia(leadingTrivia),
                                                 returnStatement.SemicolonToken);
 
-                                            return context.Document.ReplaceNodeAsync(returnStatement, newNode, cancellationToken);
+                                            return context.Document.ReplaceNodeAsync(returnStatement, newNode, ct);
                                         },
                                         GetEquivalenceKey(diagnostic, CodeFixIdentifiers.RemoveReturnKeyword));
 

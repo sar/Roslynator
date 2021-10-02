@@ -26,16 +26,16 @@ namespace Roslynator.CSharp.CodeFixes
             get
             {
                 return ImmutableArray.Create(
-                    CompilerDiagnosticIdentifiers.CannotImplicitlyConvertTypeExplicitConversionExists,
-                    CompilerDiagnosticIdentifiers.ConstantValueCannotBeConverted,
-                    CompilerDiagnosticIdentifiers.ExpressionBeingAssignedMustBeConstant,
-                    CompilerDiagnosticIdentifiers.CannotConvertNullToTypeBecauseItIsNonNullableValueType,
-                    CompilerDiagnosticIdentifiers.ResultOfExpressionIsAlwaysConstantSinceValueIsNeverEqualToNull,
-                    CompilerDiagnosticIdentifiers.CannotConvertNullToTypeParameterBecauseItCouldBeNonNullableValueType,
-                    CompilerDiagnosticIdentifiers.OnlyAssignmentCallIncrementDecrementAndNewObjectExpressionsCanBeUsedAsStatement,
-                    CompilerDiagnosticIdentifiers.CannotImplicitlyConvertType,
-                    CompilerDiagnosticIdentifiers.LeftHandSideOfAssignmentMustBeVariablePropertyOrIndexer,
-                    CompilerDiagnosticIdentifiers.ReadOnlyFieldCannotBeAssignedTo);
+                    CompilerDiagnosticIdentifiers.CS0266_CannotImplicitlyConvertTypeExplicitConversionExists,
+                    CompilerDiagnosticIdentifiers.CS0221_ConstantValueCannotBeConverted,
+                    CompilerDiagnosticIdentifiers.CS0133_ExpressionBeingAssignedMustBeConstant,
+                    CompilerDiagnosticIdentifiers.CS0037_CannotConvertNullToTypeBecauseItIsNonNullableValueType,
+                    CompilerDiagnosticIdentifiers.CS0472_ResultOfExpressionIsAlwaysConstantSinceValueIsNeverEqualToNull,
+                    CompilerDiagnosticIdentifiers.CS0403_CannotConvertNullToTypeParameterBecauseItCouldBeNonNullableValueType,
+                    CompilerDiagnosticIdentifiers.CS0201_OnlyAssignmentCallIncrementDecrementAndNewObjectExpressionsCanBeUsedAsStatement,
+                    CompilerDiagnosticIdentifiers.CS0029_CannotImplicitlyConvertType,
+                    CompilerDiagnosticIdentifiers.CS0131_LeftHandSideOfAssignmentMustBeVariablePropertyOrIndexer,
+                    CompilerDiagnosticIdentifiers.CS0191_ReadOnlyFieldCannotBeAssignedTo);
             }
         }
 
@@ -50,7 +50,7 @@ namespace Roslynator.CSharp.CodeFixes
             {
                 switch (diagnostic.Id)
                 {
-                    case CompilerDiagnosticIdentifiers.CannotImplicitlyConvertTypeExplicitConversionExists:
+                    case CompilerDiagnosticIdentifiers.CS0266_CannotImplicitlyConvertTypeExplicitConversionExists:
                         {
                             SemanticModel semanticModel = await context.GetSemanticModelAsync().ConfigureAwait(false);
 
@@ -84,7 +84,7 @@ namespace Roslynator.CSharp.CodeFixes
                                     {
                                         CodeAction codeAction = CodeAction.Create(
                                             "Use coalesce expression",
-                                            cancellationToken =>
+                                            ct =>
                                             {
                                                 ExpressionSyntax defaultValue = convertedType.GetDefaultValueSyntax(context.Document.GetDefaultSyntaxOptions());
 
@@ -93,7 +93,7 @@ namespace Roslynator.CSharp.CodeFixes
                                                     .Parenthesize()
                                                     .WithFormatterAnnotation();
 
-                                                return context.Document.ReplaceNodeAsync(expression, newNode, cancellationToken);
+                                                return context.Document.ReplaceNodeAsync(expression, newNode, ct);
                                             },
                                             GetEquivalenceKey(diagnostic, CodeFixIdentifiers.UseCoalesceExpression));
 
@@ -122,7 +122,7 @@ namespace Roslynator.CSharp.CodeFixes
                             {
                                 CodeAction codeAction = CodeAction.Create(
                                     "Create singleton array",
-                                    cancellationToken => CreateSingletonArrayRefactoring.RefactorAsync(context.Document, expression, arrayType.ElementType, semanticModel, cancellationToken),
+                                    ct => CreateSingletonArrayRefactoring.RefactorAsync(context.Document, expression, arrayType.ElementType, semanticModel, ct),
                                     GetEquivalenceKey(diagnostic, CodeFixIdentifiers.CreateSingletonArray));
 
                                 context.RegisterCodeFix(codeAction, diagnostic);
@@ -130,27 +130,27 @@ namespace Roslynator.CSharp.CodeFixes
 
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.ConstantValueCannotBeConverted:
+                    case CompilerDiagnosticIdentifiers.CS0221_ConstantValueCannotBeConverted:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.UseUncheckedExpression))
                                 break;
 
                             CodeAction codeAction = CodeAction.Create(
                                 "Use 'unchecked'",
-                                cancellationToken =>
+                                ct =>
                                 {
                                     CheckedExpressionSyntax newNode = CSharpFactory.UncheckedExpression(expression.WithoutTrivia());
 
                                     newNode = newNode.WithTriviaFrom(expression);
 
-                                    return context.Document.ReplaceNodeAsync(expression, newNode, cancellationToken);
+                                    return context.Document.ReplaceNodeAsync(expression, newNode, ct);
                                 },
                                 GetEquivalenceKey(diagnostic));
 
                             context.RegisterCodeFix(codeAction, diagnostic);
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.ExpressionBeingAssignedMustBeConstant:
+                    case CompilerDiagnosticIdentifiers.CS0133_ExpressionBeingAssignedMustBeConstant:
                         {
                             SyntaxNode parent = expression.Parent;
 
@@ -184,7 +184,7 @@ namespace Roslynator.CSharp.CodeFixes
                             {
                                 CodeAction codeAction = CodeAction.Create(
                                     ReplaceConstantWithFieldRefactoring.Title,
-                                    cancellationToken => ReplaceConstantWithFieldRefactoring.RefactorAsync(context.Document, fieldDeclaration, cancellationToken),
+                                    ct => ReplaceConstantWithFieldRefactoring.RefactorAsync(context.Document, fieldDeclaration, ct),
                                     GetEquivalenceKey(diagnostic));
 
                                 context.RegisterCodeFix(codeAction, diagnostic);
@@ -193,8 +193,8 @@ namespace Roslynator.CSharp.CodeFixes
 
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.CannotConvertNullToTypeBecauseItIsNonNullableValueType:
-                    case CompilerDiagnosticIdentifiers.CannotConvertNullToTypeParameterBecauseItCouldBeNonNullableValueType:
+                    case CompilerDiagnosticIdentifiers.CS0037_CannotConvertNullToTypeBecauseItIsNonNullableValueType:
+                    case CompilerDiagnosticIdentifiers.CS0403_CannotConvertNullToTypeParameterBecauseItCouldBeNonNullableValueType:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.ReplaceNullLiteralExpressionWithDefaultValue))
                                 break;
@@ -204,7 +204,7 @@ namespace Roslynator.CSharp.CodeFixes
                             CodeFixRegistrator.ReplaceNullWithDefaultValue(context, diagnostic, expression, semanticModel);
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.ResultOfExpressionIsAlwaysConstantSinceValueIsNeverEqualToNull:
+                    case CompilerDiagnosticIdentifiers.CS0472_ResultOfExpressionIsAlwaysConstantSinceValueIsNeverEqualToNull:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.RemoveConditionThatIsAlwaysEqualToTrueOrFalse))
                                 break;
@@ -216,13 +216,13 @@ namespace Roslynator.CSharp.CodeFixes
 
                             CodeAction codeAction = CodeAction.Create(
                                 "Remove condition",
-                                cancellationToken =>
+                                ct =>
                                 {
-                                    cancellationToken.ThrowIfCancellationRequested();
+                                    ct.ThrowIfCancellationRequested();
 
                                     SyntaxNode newRoot = RemoveCondition(root, expression, nullCheck.Style == NullCheckStyles.NotEqualsToNull);
 
-                                    cancellationToken.ThrowIfCancellationRequested();
+                                    ct.ThrowIfCancellationRequested();
 
                                     return Task.FromResult(context.Document.WithSyntaxRoot(newRoot));
                                 },
@@ -232,7 +232,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.OnlyAssignmentCallIncrementDecrementAndNewObjectExpressionsCanBeUsedAsStatement:
+                    case CompilerDiagnosticIdentifiers.CS0201_OnlyAssignmentCallIncrementDecrementAndNewObjectExpressionsCanBeUsedAsStatement:
                         {
                             if (Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.RemoveParentheses)
                                 && expression is ParenthesizedExpressionSyntax parenthesizedExpression
@@ -266,7 +266,7 @@ namespace Roslynator.CSharp.CodeFixes
                                     {
                                         CodeAction codeAction = CodeAction.Create(
                                             "Add argument list",
-                                            cancellationToken => context.Document.ReplaceNodeAsync(expression, invocationExpression, cancellationToken),
+                                            ct => context.Document.ReplaceNodeAsync(expression, invocationExpression, ct),
                                             GetEquivalenceKey(diagnostic, CodeFixIdentifiers.AddArgumentList));
 
                                         context.RegisterCodeFix(codeAction, diagnostic);
@@ -291,10 +291,10 @@ namespace Roslynator.CSharp.CodeFixes
 
                                     CodeAction codeAction = CodeAction.Create(
                                         "Replace comparison with assignment",
-                                        cancellationToken =>
+                                        ct =>
                                         {
                                             AssignmentExpressionSyntax simpleAssignment = SimpleAssignmentExpression(info.Left, info.Right).WithTriviaFrom(expression);
-                                            return context.Document.ReplaceNodeAsync(expression, simpleAssignment, cancellationToken);
+                                            return context.Document.ReplaceNodeAsync(expression, simpleAssignment, ct);
                                         },
                                         GetEquivalenceKey(diagnostic, CodeFixIdentifiers.ReplaceComparisonWithAssignment));
 
@@ -315,7 +315,7 @@ namespace Roslynator.CSharp.CodeFixes
                                     {
                                         CodeAction codeAction = CodeAction.Create(
                                             "Replace ?: with if-else",
-                                            cancellationToken =>
+                                            ct =>
                                             {
                                                 IfStatementSyntax newNode = IfStatement(
                                                     conditionalExpression.Condition.WalkDownParentheses(),
@@ -326,7 +326,7 @@ namespace Roslynator.CSharp.CodeFixes
                                                     .WithTriviaFrom(expressionStatement)
                                                     .WithFormatterAnnotation();
 
-                                                return context.Document.ReplaceNodeAsync(expressionStatement, newNode, cancellationToken);
+                                                return context.Document.ReplaceNodeAsync(expressionStatement, newNode, ct);
                                             },
                                             GetEquivalenceKey(diagnostic, CodeFixIdentifiers.ReplaceConditionalExpressionWithIfElse));
 
@@ -350,7 +350,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                                     CodeAction codeAction = CodeAction.Create(
                                         IntroduceLocalVariableRefactoring.GetTitle(expression),
-                                        cancellationToken => IntroduceLocalVariableRefactoring.RefactorAsync(context.Document, expressionStatement, typeSymbol, addAwait, semanticModel, cancellationToken),
+                                        ct => IntroduceLocalVariableRefactoring.RefactorAsync(context.Document, expressionStatement, typeSymbol, addAwait, semanticModel, ct),
                                         GetEquivalenceKey(diagnostic, CodeFixIdentifiers.IntroduceLocalVariable));
 
                                     context.RegisterCodeFix(codeAction, diagnostic);
@@ -360,7 +360,7 @@ namespace Roslynator.CSharp.CodeFixes
                                 {
                                     CodeAction codeAction = CodeAction.Create(
                                         $"Introduce field for '{expression}'",
-                                        cancellationToken => IntroduceFieldRefactoring.RefactorAsync(context.Document, expressionStatement, typeSymbol, semanticModel, cancellationToken),
+                                        ct => IntroduceFieldRefactoring.RefactorAsync(context.Document, expressionStatement, typeSymbol, semanticModel, ct),
                                         GetEquivalenceKey(diagnostic, CodeFixIdentifiers.IntroduceField));
 
                                     context.RegisterCodeFix(codeAction, diagnostic);
@@ -369,7 +369,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.CannotImplicitlyConvertType:
+                    case CompilerDiagnosticIdentifiers.CS0029_CannotImplicitlyConvertType:
                         {
                             if (Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.ReplaceYieldReturnWithForEach)
                                 && expression.IsParentKind(SyntaxKind.YieldReturnStatement))
@@ -413,7 +413,7 @@ namespace Roslynator.CSharp.CodeFixes
                                     {
                                         CodeAction codeAction = CodeAction.Create(
                                             "Replace string literal with character literal",
-                                            cancellationToken => ReplaceStringLiteralWithCharacterLiteralRefactoring.RefactorAsync(context.Document, literalExpression, cancellationToken),
+                                            ct => ReplaceStringLiteralWithCharacterLiteralRefactoring.RefactorAsync(context.Document, literalExpression, ct),
                                             GetEquivalenceKey(diagnostic, CodeFixIdentifiers.ReplaceStringLiteralWithCharacterLiteral));
 
                                         context.RegisterCodeFix(codeAction, diagnostic);
@@ -435,7 +435,7 @@ namespace Roslynator.CSharp.CodeFixes
                                 {
                                     CodeAction codeAction = CodeAction.Create(
                                         "Use yield return instead of return",
-                                        cancellationToken => UseYieldReturnInsteadOfReturnRefactoring.RefactorAsync(context.Document, returnStatement, SyntaxKind.YieldReturnStatement, semanticModel, cancellationToken),
+                                        ct => UseYieldReturnInsteadOfReturnRefactoring.RefactorAsync(context.Document, returnStatement, SyntaxKind.YieldReturnStatement, semanticModel, ct),
                                         GetEquivalenceKey(diagnostic, CodeFixIdentifiers.UseYieldReturnInsteadOfReturn));
 
                                     context.RegisterCodeFix(codeAction, diagnostic);
@@ -444,7 +444,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.LeftHandSideOfAssignmentMustBeVariablePropertyOrIndexer:
+                    case CompilerDiagnosticIdentifiers.CS0131_LeftHandSideOfAssignmentMustBeVariablePropertyOrIndexer:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.RemoveConstModifier))
                                 return;
@@ -492,7 +492,7 @@ namespace Roslynator.CSharp.CodeFixes
 
                             break;
                         }
-                    case CompilerDiagnosticIdentifiers.ReadOnlyFieldCannotBeAssignedTo:
+                    case CompilerDiagnosticIdentifiers.CS0191_ReadOnlyFieldCannotBeAssignedTo:
                         {
                             if (!Settings.IsEnabled(diagnostic.Id, CodeFixIdentifiers.MakeFieldWritable))
                                 break;

@@ -18,7 +18,7 @@ namespace Roslynator.CSharp.CodeFixes
     {
         public override ImmutableArray<string> FixableDiagnosticIds
         {
-            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.TypeParameterHasSameNameAsTypeParameterFromOuterType); }
+            get { return ImmutableArray.Create(CompilerDiagnosticIdentifiers.CS0693_TypeParameterHasSameNameAsTypeParameterFromOuterType); }
         }
 
         public override async Task RegisterCodeFixesAsync(CodeFixContext context)
@@ -40,7 +40,7 @@ namespace Roslynator.CSharp.CodeFixes
 
             CodeAction codeAction = CodeAction.Create(
                 $"Remove type parameter '{name}'",
-                cancellationToken =>
+                ct =>
                 {
                     GenericInfo genericInfo = SyntaxInfo.GenericInfo(typeParameter);
 
@@ -51,7 +51,7 @@ namespace Roslynator.CSharp.CodeFixes
                     if (constraintClause != null)
                         newGenericInfo = newGenericInfo.RemoveConstraintClause(constraintClause);
 
-                    return context.Document.ReplaceNodeAsync(genericInfo.Node, newGenericInfo.Node, cancellationToken);
+                    return context.Document.ReplaceNodeAsync(genericInfo.Node, newGenericInfo.Node, ct);
                 },
                 GetEquivalenceKey(diagnostic));
 
